@@ -415,27 +415,45 @@ body{
 .psg button{ appearance:none; border:1px solid var(--line); background:transparent; color:var(--muted); font:inherit; font-size:13px; padding:8px 14px; border-radius:20px; cursor:pointer; }
 .psg button.on{ background:var(--frame); border-color:var(--frame); color:#fff; }
 .psg-tools{ display:flex; gap:8px; margin:0 0 10px; }
-.psg-text p{ font-family:"Fraunces",Georgia,serif; font-size:17.5px; line-height:1.85; margin:0 0 12px; }
+
 .psg h3{ font-size:13px; color:var(--muted); font-weight:600; margin:22px 0 8px; letter-spacing:.05em; }
 .psg textarea{ width:100%; min-height:9em; font:inherit; font-size:16px; line-height:1.8; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); resize:vertical; }
 .psg-saved{ font-size:11.5px; color:var(--hint); min-height:1.4em; margin-top:4px; }
 .psg-model-text{ margin-top:10px; padding:12px 14px; border-radius:12px; background:var(--face2); font-size:15px; line-height:1.9; }
-.psg-model-text[hidden], .psg-svo-view[hidden], .psg-text[hidden]{ display:none; }
+.psg-model-text[hidden]{ display:none; }
 .psg-note{ font-size:11.5px; color:var(--hint); margin:6px 0 0; }
 .psg-empty{ font-size:14px; line-height:1.9; color:var(--muted); }
-.psg-legend{ font-size:11.5px; color:var(--muted); line-height:1.9; margin:0 0 6px; }
+.psg-legend{ font-size:11px; color:var(--muted); line-height:1.9; margin:0 0 4px; visibility:hidden; }
+.psg-flow.on + .psg-legend, .psg-legend.on{ visibility:visible; }
+/* 先生に見てもらう（指摘だけ。点数は付けない） */
+.psg-review{ margin-top:8px; background:#eef1ea; border-radius:14px; padding:12px 10px; }
+.psg .psg-review-btn{ background:#2e9d5a; border-color:#2e9d5a; color:#fff; }
+.psg .psg-review-btn:disabled{ color:var(--hint); background:var(--face2); border-color:var(--line); border-style:dashed; }
+.psg-reviews{ display:flex; flex-direction:column; gap:12px; margin-top:12px; }
+.psg-reviews:empty{ display:none; }
+.psg .msg p{ margin:0; padding:8px 12px; border-radius:16px; font-size:14.5px; line-height:1.75; white-space:pre-wrap; word-break:break-word; }
+.psg .msg.err p{ background:#fbe7e4; color:#7a1f17; font-size:13px; }
+.rv-date{ font-size:11px; color:var(--hint); margin:0 0 4px 40px; }
+.rv details{ margin:6px 0 0 40px; font-size:12.5px; color:var(--muted); }
+.rv details p{ margin:4px 0 0; line-height:1.8; white-space:pre-wrap; }
 /* SVO 分解：[ ] 名詞 ( ) 名詞の説明 < > 副詞、動詞に下線、語の下に S V O C M */
-.svo{ font-family:"Fraunces",Georgia,serif; font-size:18px; line-height:2.6; margin:0 0 14px; }
-.svo .bk{ font-weight:600; padding:0 1px; }
-.svo .bk.n{ color:var(--n); } .svo .bk.a{ color:var(--a); } .svo .bk.m{ color:var(--m); }
-.svo .u{ text-decoration:underline; text-decoration-color:var(--v); text-decoration-thickness:2px; text-underline-offset:5px; }
+.psg-flow{ font-family:"Fraunces",Georgia,serif; font-size:17px; line-height:2.45; margin:0 0 8px; }
+.svo .bk{ position:relative; }
+.svo .bk::before{ content:attr(data-c); position:absolute; bottom:-.12em; line-height:1; font-weight:600; font-size:.95em; pointer-events:none; }
+.svo .bk.o::before{ right:calc(var(--k,0) * .26em + .02em); }
+.svo .bk.c::before{ left:calc(var(--k,0) * .26em + .02em); }
+.svo .bk.n::before{ color:var(--n); } .svo .bk.a::before{ color:var(--a); } .svo .bk.m::before{ color:var(--m); }
+.svo .u{ text-decoration:underline; text-decoration-color:var(--v); text-decoration-thickness:2px; text-underline-offset:4px; }
 .svo .w{ position:relative; }
-.svo .w > .lb{ position:absolute; left:50%; top:100%; margin-top:5px; transform:translateX(-50%); white-space:nowrap; line-height:1; }
+.svo .w > .lb{ position:absolute; left:50%; top:100%; margin-top:2px; transform:translateX(-50%); white-space:nowrap; line-height:1; }
 .svo .w > .lb.long{ left:0; transform:none; }
-.svo .lb{ font-family:-apple-system,"Hiragino Sans",sans-serif; font-size:13px; font-weight:700; }
+.svo .lb{ font-family:-apple-system,"Hiragino Sans",sans-serif; font-size:10.5px; font-weight:700; }
 .svo .lb.S, .svo .lb.O, .svo .lb.C{ color:var(--n); }
 .svo .lb.V{ color:var(--v); } .svo .lb.M{ color:var(--m); } .svo .lb.A{ color:var(--a); }
 .svo .lb.sub{ opacity:.8; }
+/* 原文のとき：飾りだけ消す（文字の位置は変わらない） */
+.psg-flow:not(.on) .bk::before, .psg-flow:not(.on) .lb{ visibility:hidden; }
+.psg-flow:not(.on) .u{ text-decoration-color:transparent; }
 
 /* キラ加工：知らなかった語 */
 .holo{ position:absolute; inset:0; pointer-events:none; z-index:1; mix-blend-mode:multiply; opacity:.55;
@@ -1267,7 +1285,7 @@ body{
     while(i<src.length){
       var ch=src[i];
       if(ch==='\\' && (src[i+1]==='(' || src[i+1]===')')){ word+=src[i+1]; i+=2; continue; }
-      if(OPEN[ch] || CLOSE[ch]){ flush(); out+='<span class="bk '+(OPEN[ch]||CLOSE[ch])+'">'+esc(ch)+'</span>'; i++; continue; }
+      if(OPEN[ch] || CLOSE[ch]){ flush(); out+='<span class="bk '+(OPEN[ch]||CLOSE[ch])+(OPEN[ch] ? ' o' : ' c')+'" data-c="'+esc(ch)+'"></span>'; i++; continue; }
       if(ch==='_'){ flush(); out+= under ? '</span>' : '<span class="u">'; under=!under; i++; continue; }
       if(ch==='^'){
         var m=/^\^([SVOCMA]['’]?)/.exec(src.slice(i));
@@ -1275,8 +1293,8 @@ body{
         var lab=m[1], cls=lab[0]+(lab.length>1 ? ' sub' : ''), mark=(lab[0]==='A' ? '形' : lab[0])+lab.slice(1);
         var text=seen[lab[0]] ? mark : mark+'='+SVO_NAME[lab[0]];
         if(!seen[lab[0]]){ seen[lab[0]]=1; cls+=' long'; }
-        if(!word && /<span class="bk [nam]">[^<]*<\/span>$/.test(out)){
-          out=out.replace(/(<span class="bk [nam]">[^<]*<\/span>)$/, '<span class="w">$1<span class="lb '+cls+'">'+esc(text)+'</span></span>');
+        if(!word && /<span class="bk [nam] [oc]" data-c="[^"]*"><\/span>$/.test(out)){
+          out=out.replace(/(<span class="bk [nam] [oc]" data-c="[^"]*"><\/span>)$/, '<span class="w">$1<span class="lb '+cls+'">'+esc(text)+'</span></span>');
           i+=m[0].length; if(src[i]===' ') i++; continue;
         }
         var k=word.lastIndexOf(' ')+1, head=word.slice(0,k), w=word.slice(k);
@@ -1288,6 +1306,21 @@ body{
     }
     flush(); if(under) out+='</span>';
     return out;
+  }
+  /* 間に文字のないかっこの並びに、外側ほど大きいずらし量（--k）を付ける */
+  function spaceBrackets(root){
+    var w=document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT, null), run=[], n;
+    function end(){
+      var opens=run.filter(function(b){ return b.classList.contains('o'); }), closes=run.filter(function(b){ return b.classList.contains('c'); });
+      opens.forEach(function(b, i){ b.style.setProperty('--k', opens.length-1-i); });
+      closes.forEach(function(b, i){ b.style.setProperty('--k', i); });
+      run=[];
+    }
+    while((n=w.nextNode())){
+      if(n.nodeType===1 && n.classList.contains('bk')) run.push(n);
+      else if(n.nodeType===3 && n.nodeValue.length && !(n.parentNode.classList && n.parentNode.classList.contains('lb'))) end();
+    }
+    end();
   }
   /* 記号どうしが同じ行で重なったら、後ろの記号を右へずらす */
   function unclash(root){
@@ -1309,18 +1342,21 @@ body{
     }else{
       var seen={}, mine=(loadMyTr()[tr]||{}).text||'';
       psgBody.innerHTML='<div class="psg-tools"><button type="button" class="psg-svo-btn">SVO で分ける</button></div>'
-        +'<div class="psg-text">'+p.text.split('\n').map(function(l){ return '<p>'+esc(l)+'</p>'; }).join('')+'</div>'
-        +'<div class="psg-svo-view" hidden><p class="psg-legend"><b style="color:var(--n)">[ ]</b> 名詞のまとまり　<b style="color:var(--a)">( )</b> 名詞の説明　<b style="color:var(--m)">&lt; &gt;</b> 副詞のまとまり　下線は動詞</p>'
-        +(p.svo||[]).map(function(m){ return '<div class="svo">'+renderSVO(m, seen)+'</div>'; }).join('')+'</div>'
+        +'<p class="psg-legend"><b style="color:var(--n)">[ ]</b> 名詞のまとまり　<b style="color:var(--a)">( )</b> 名詞の説明　<b style="color:var(--m)">&lt; &gt;</b> 副詞のまとまり　下線は動詞</p>'
+        +'<div class="psg-flow svo">'+((p.svo||[]).length ? p.svo.map(function(m){ return renderSVO(m, seen); }).join(' ') : esc(p.text))+'</div>'
         +'<h3>和訳</h3><textarea class="psg-my" placeholder="ここに和訳を書く" aria-label="'+esc(tr)+' の和訳">'+esc(mine)+'</textarea><div class="psg-saved"></div>'
         +'<button type="button" class="psg-model-btn">模範解答を見る</button>'
-        +'<div class="psg-model-text" hidden><p style="margin:0">'+esc(p.translation||'')+'</p><p class="psg-note">模範解答は Claude が作った下書きです。</p></div>';
-      var svoBtn=psgBody.querySelector('.psg-svo-btn'), svoView=psgBody.querySelector('.psg-svo-view'), plain=psgBody.querySelector('.psg-text');
+        +'<div class="psg-model-text" hidden><p style="margin:0">'+esc(p.translation||'')+'</p><p class="psg-note">模範解答は Claude が作った下書きです。</p></div>'
+        +'<h3>先生に見てもらう</h3><div class="psg-review"><button type="button" class="psg-review-btn">先生に見てもらう</button>'
+        +'<p class="psg-note">書いた和訳を Claude先生が読んで、誤訳・訳抜け・構文の取り違えを指摘します（点数は付けません）。</p>'
+        +'<div class="psg-reviews"></div></div>';
+      var svoBtn=psgBody.querySelector('.psg-svo-btn'), flow=psgBody.querySelector('.psg-flow'), legend=psgBody.querySelector('.psg-legend');
+      spaceBrackets(flow);
       svoBtn.addEventListener('click', function(){
-        var on=svoView.hidden;
-        svoView.hidden=!on; plain.hidden=on;
+        var on=!flow.classList.contains('on');
+        flow.classList.toggle('on', on); legend.classList.toggle('on', on);
         svoBtn.classList.toggle('on', on); svoBtn.textContent=on ? '元の英文に戻す' : 'SVO で分ける';
-        if(on) requestAnimationFrame(function(){ svoView.querySelectorAll('.svo').forEach(unclash); });
+        if(on) requestAnimationFrame(function(){ unclash(flow); });
       });
       var modelBtn=psgBody.querySelector('.psg-model-btn'), model=psgBody.querySelector('.psg-model-text');
       modelBtn.addEventListener('click', function(){
@@ -1328,11 +1364,13 @@ body{
         modelBtn.textContent=model.hidden ? '模範解答を見る' : '模範解答を隠す';
       });
       var ta=psgBody.querySelector('.psg-my'), saved=psgBody.querySelector('.psg-saved');
+      bindReview(psgBody, tr, p, ta);
       ta.addEventListener('input', function(){
         clearTimeout(psgTimer); saved.textContent='';
         psgTimer=setTimeout(function(){
-          var all=loadMyTr();
-          if(ta.value.trim()) all[tr]={ text:ta.value, at:Date.now() }; else delete all[tr];
+          var all=loadMyTr(), ent=all[tr]||{};
+          ent.text=ta.value; ent.at=Date.now();
+          if(!ta.value.trim() && !(ent.reviews||[]).length) delete all[tr]; else all[tr]=ent;
           saveMyTr(all); saved.textContent='保存しました';
         }, 600);
       });
@@ -1340,10 +1378,55 @@ body{
     psg.scrollTop=0; psg.classList.add('on'); psg.setAttribute('aria-hidden','false');
     document.getElementById('psgClose').focus({ preventScroll:true });
   }
+  /* 和訳を先生に見てもらう。英文・SVO 分解・模範和訳（下書き）を先生に渡し、指摘だけを返してもらう。
+     結果は TR ごとに和訳と一緒に残す（eigo:mytr の reviews、最大30件）。書き出しに含まれる */
+  var REVIEW='あなたは「Claude先生」。『必修英文100題』で英文読解を学ぶ「KANTAくん」が書いた和訳を読み、指摘だけを返す。点数や合否は付けない。\n'
+    +'見るところ：\n・誤訳（意味の取り違え）、訳抜け、構文の取り違え（下の SVO 分解に照らして、主語・動詞・目的語・補語や、修飾のかかり方がずれていないか）。\n'
+    +'・日本語として不自然で、意味が伝わりにくいところ。\n'
+    +'返し方：\n・です・ます調。前置きは要らない。指摘は大事なものから最大4つ。箇条は「・」で始める。\n'
+    +'・各指摘は「英文の該当箇所（短く引用）→ 何がずれているか → どう直すとよいか」を1〜2文で書く。\n'
+    +'・模範和訳は参考。KANTAくんの訳が別の表現でも意味を正しく取れていれば、模範どおりでなくても指摘しない。模範和訳の全文は書き写さない。\n'
+    +'・大きな問題がなければそう伝え、よくできている点を一つ添える。\n'
+    +'・全体で400字以内。見出しや記号での強調は使わない。\n'
+    +'【SVO 分解の記法】[ ] 名詞のまとまり、( ) 名詞を説明するまとまり、< > 副詞のまとまり、_ … _ 動詞。語の直後の ^S ^V ^O ^C ^M ^A はその語の役割（主語・動詞・目的語・補語・修飾・名詞の説明）、\' は節の中。\n';
+  function fmtTime(t){ var d=new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+('0'+d.getMinutes()).slice(-2); }
+  function reviewHTML(r){
+    return '<div class="rv"><div class="rv-date">'+esc(fmtTime(r.at))+' の和訳への指摘</div>'+bubble('t', r.review)
+      +'<details><summary>このときの和訳</summary><p>'+esc(r.mine)+'</p></details></div>';
+  }
+  function bindReview(root, tr, p, ta){
+    var btn=root.querySelector('.psg-review-btn'), list=root.querySelector('.psg-reviews'), busy=false;
+    function render(){ list.innerHTML=((loadMyTr()[tr]||{}).reviews||[]).slice().reverse().map(reviewHTML).join(''); }
+    function net(){ btn.disabled=busy || !online(); btn.textContent=!online() ? '圏外' : busy ? '先生が読んでいます…' : '先生に見てもらう'; }
+    render(); net();
+    window.addEventListener('online', net); window.addEventListener('offline', net);
+    btn.addEventListener('click', function(){
+      var mine=ta.value.trim();
+      if(busy || !online()) return;
+      if(!mine){ alert('和訳を書いてから押してください'); ta.focus(); return; }
+      (apiKey() ? Promise.resolve(true) : askKey()).then(function(ok){
+        if(!ok) return;
+        busy=true; net();
+        list.insertAdjacentHTML('afterbegin', '<div class="rv rv-wait">'+bubble('t', '…', 'typing')+'</div>');
+        var system=[{ type:'text', text:REVIEW, cache_control:{ type:'ephemeral' } },
+          { type:'text', text:'\n【英文】'+tr+'\n'+p.text+'\n\n【SVO 分解】\n'+(p.svo||[]).join('\n')+'\n\n【模範和訳（下書き）】\n'+(p.translation||'') }];
+        callClaude(system, '【KANTAくんの和訳】\n'+mine).then(function(text){
+          var all=loadMyTr(), ent=all[tr]||{ text:ta.value, at:Date.now() };
+          ent.reviews=(ent.reviews||[]).concat([{ at:Date.now(), mine:mine, review:text || '（答えが空でした）' }]).slice(-30);
+          all[tr]=ent; saveMyTr(all);
+          render();
+        }, function(err){
+          var w=list.querySelector('.rv-wait'); if(w) w.remove();
+          list.insertAdjacentHTML('afterbegin', '<div class="rv">'+bubble('t', err.status==='refusal' ? err.message : err.status===401 ? '鍵が正しくないようです。コレクション画面の「鍵を消す」から入れ直してください。'
+            : err.status ? 'うまく読めませんでした（'+err.status+'：'+err.message+'）' : '通信できませんでした。もう一度押してください', 'err')+'</div>');
+        }).then(function(){ busy=false; net(); });
+      });
+    });
+  }
   function closePassage(){ psg.classList.remove('on'); psg.setAttribute('aria-hidden','true'); }
   document.getElementById('psgClose').addEventListener('click', closePassage);
   psg.addEventListener('keydown', function(e){ if(e.key==='Escape' && !e.target.closest('textarea')) closePassage(); });
-  window.addEventListener('resize', function(){ if(psg.classList.contains('on')) psg.querySelectorAll('.psg-svo-view:not([hidden]) .svo').forEach(unclash); });
+  window.addEventListener('resize', function(){ if(psg.classList.contains('on')) psg.querySelectorAll('.psg-flow.on').forEach(unclash); });
 
   var etym=document.getElementById('etym'), flash=document.getElementById('flash');
   var etymCard=null, etymDone=null;
