@@ -350,7 +350,9 @@ body{
 .gauge-txt b{ font-weight:600; color:var(--frame2); }
 .home-status{ margin-top:22px; font-size:14px; text-align:center; line-height:1.7; min-height:3.4em; }
 .home-status small{ display:block; font-size:12px; color:var(--onbg2); }
-.home-quiz{ margin-top:14px; }
+.home-quiz{ margin-top:14px; display:flex; gap:12px; justify-content:center; }
+.q-got{ margin:-18px 0 26px; font-size:14px; color:var(--onbg); text-align:center; line-height:1.8; max-width:20em; }
+.q-got b{ font-family:"Fraunces",Georgia,serif; font-weight:400; color:var(--frame2); }
 .home-foot{ position:absolute; bottom:calc(env(safe-area-inset-bottom,0px) + 10px); left:0; right:0; text-align:center; }
 
 /* 開封 */
@@ -538,7 +540,7 @@ body{
     <div class="gauge"><div class="gauge-bar" id="gaugeBar"><i></i></div><div class="gauge-txt" id="gaugeTxt"></div></div>
   </div>
   <div class="home-status" id="homeStatus"></div>
-  <button type="button" class="btn home-quiz" id="quizBtn">小テスト</button>
+  <div class="home-quiz"><button type="button" class="btn" id="quizListBtn">初級テスト</button><button type="button" class="btn" id="quizTrBtn">TRテスト</button></div>
   <div class="home-foot"><button type="button" class="link" id="collBtn"></button></div>
 </section>
 
@@ -598,6 +600,7 @@ body{
 <section class="screen" id="quizEnd">
   <div class="q-end" id="qEndPts"></div>
   <div class="q-end-sub" id="qEndSub"></div>
+  <div class="q-got" id="qGot"></div>
   <button type="button" class="btn primary" id="quizEndHome">ホームへ</button>
 </section>
 
@@ -1934,12 +1937,17 @@ body{
       }));
   }
 
-  function startQuiz(){
+  /* 初級テスト／TRテスト。出題範囲はコレクションと同じ振り分け（出会った語は TR 番号があれば TR）。
+     まだ持っていないカードを優先して出し、正解したらそのカードを手に入れる */
+  function quizSetOf(w){ var c=BYID[w.id]; return c ? collOf(c) : 'list'; }
+  function startQuiz(set){
     var today=dayKey();
     Object.keys(S.quizLog).forEach(function(id){ if(S.quizLog[id]!==today) delete S.quizLog[id]; });
-    var pool=QITEMS.filter(function(w){ return !S.quizLog[w.id]; });
-    if(pool.length<5) pool=QITEMS;
-    Q={ items:shuffle(pool).slice(0,5), i:0, got:0, busy:false };
+    var all=QITEMS.filter(function(w){ return quizSetOf(w)===set; });
+    var fresh=all.filter(function(w){ return !S.quizLog[w.id]; });
+    if(fresh.length<5) fresh=all;
+    var notOwned=shuffle(fresh.filter(function(w){ return !S.owned[w.id]; })), owned=shuffle(fresh.filter(function(w){ return S.owned[w.id]; }));
+    Q={ set:set, items:notOwned.concat(owned).slice(0,5), i:0, got:0, gained:[], busy:false };
     show('quiz');
     renderQ();
   }
@@ -1949,7 +1957,8 @@ body{
     $('qN').textContent=(Q.i+1)+' / '+Q.items.length;
     var ok=function(x){ return x.id!==w.id && x.meaning!==w.meaning && x.word!==w.word; };
     var others=shuffle(QITEMS.filter(function(x){ return x.group===w.group && ok(x); })).slice(0,3);
-    if(others.length<3 && w.group==='met') others=others.concat(shuffle(QITEMS.filter(function(x){ return x.group==='tr' && ok(x); })).slice(0,3-others.length));
+    /* 誤答が足りないとき（出会った語の新規など）は、同じテストの範囲から補う */
+    if(others.length<3) others=others.concat(shuffle(QITEMS.filter(function(x){ return quizSetOf(x)===Q.set && !x.con===!w.con && ok(x) && others.indexOf(x)<0; })).slice(0,3-others.length));
     var opts=shuffle([w].concat(others)), label;
     if(w.con){
       var bl=blankSentence(w.sentence, w.word);
@@ -1974,7 +1983,12 @@ body{
     var rb=$('qOpts').querySelector('[data-id="'+CSS.escape(w.id)+'"]');
     rb.classList.add('ok');
     if(right){
-      Q.got++; S.points++; save();
+      Q.got++; S.points++;
+      /* 正解したカードを手に入れる（まだ持っていないとき）。誤読の記録がある語はキラ */
+      var c=BYID[w.id], fresh=c && c.status==='approved' && !S.owned[w.id];
+      if(fresh){ S.owned[w.id]={ order:S.nextOrder++, first:Date.now(), met:1, kira:misreads(c).length>0 }; Q.gained.push(c.word); }
+      save();
+      $('qPlus').textContent=fresh ? '+1 ポイント　カードをゲット！' : '+1 ポイント';
       $('qPlus').classList.add('on');
       setTimeout(nextQ, 800);
     }else{
@@ -1996,9 +2010,11 @@ body{
     if(Q.i<Q.items.length){ renderQ(); return; }
     $('qEndPts').textContent='+'+Q.got;
     $('qEndSub').textContent='ポイントを足しました　（いま '+S.points+'ポイント）';
+    $('qGot').innerHTML=Q.gained.length ? 'ゲットしたカード：'+Q.gained.map(function(x){ return '<b>'+esc(x)+'</b>'; }).join('、') : '';
     show('quizEnd');
   }
-  $('quizBtn').addEventListener('click', startQuiz);
+  $('quizListBtn').addEventListener('click', function(){ startQuiz('list'); });
+  $('quizTrBtn').addEventListener('click', function(){ startQuiz('tr'); });
   $('quizClose').addEventListener('click', function(){ Q=null; $('qShow').classList.remove('on'); show('home'); });
   $('quizEndHome').addEventListener('click', function(){ show('home'); });
 
