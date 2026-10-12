@@ -422,7 +422,7 @@ body{
 /* TR の全文（本文・和訳を書く欄・模範解答・SVO） */
 .psg{ position:fixed; inset:0; z-index:30; background:var(--face); color:var(--ink); overflow-y:auto; display:none;
   padding:calc(env(safe-area-inset-top,0px) + 14px) 18px calc(env(safe-area-inset-bottom,0px) + 40px);
-  --n:#1D9E75; --a:#7F77DD; --m:#c8892c; --v:#d33b2f; }
+  --n:#1D9E75; --a:#7F77DD; --m:#2f6fc4; --v:#d33b2f; }
 .psg.on{ display:block; }
 @media (prefers-reduced-motion:no-preference){ .psg.on{ animation:fg-in .25s ease-out; } }
 .psg-head{ display:flex; align-items:center; justify-content:space-between; margin:0 0 14px; }
@@ -452,11 +452,11 @@ body{
 .rv details{ margin:6px 0 0 40px; font-size:12.5px; color:var(--muted); }
 .rv details p{ margin:4px 0 0; line-height:1.8; white-space:pre-wrap; }
 /* SVO 分解：[ ] 名詞 ( ) 名詞の説明 < > 副詞、動詞に下線、語の下に S V O C M */
-.psg-flow{ font-family:"Fraunces",Georgia,serif; font-size:17px; line-height:2.45; margin:0 0 8px; }
-.svo .bk{ position:relative; }
-.svo .bk::before{ content:attr(data-c); position:absolute; bottom:-.12em; line-height:1; font-weight:600; font-size:.95em; pointer-events:none; }
-.svo .bk.o::before{ right:calc(var(--k,0) * .26em + .02em); }
-.svo .bk.c::before{ left:calc(var(--k,0) * .26em + .02em); }
+.psg-flow{ font-family:"Fraunces",Georgia,serif; font-size:15.5px; line-height:2.6; word-spacing:.12em; margin:0 0 8px; }
+/* かっこは幅を持たせて語の間に置く。原文のときも幅は残すので、切り替えても語の位置は変わらない */
+.svo .bk::before{ content:attr(data-c); font-weight:600; font-size:.95em; pointer-events:none; }
+.svo .bk.o::before{ margin-right:.06em; }
+.svo .bk.c::before{ margin-left:.06em; }
 .svo .bk.n::before{ color:var(--n); } .svo .bk.a::before{ color:var(--a); } .svo .bk.m::before{ color:var(--m); }
 .svo .u{ text-decoration:underline; text-decoration-color:var(--v); text-decoration-thickness:2px; text-underline-offset:4px; }
 .svo .w{ position:relative; }
@@ -1349,10 +1349,13 @@ body{
   /* 記号どうしが同じ行で重なったら、後ろの記号を右へずらす */
   function unclash(root){
     root.querySelectorAll('.lb').forEach(function(lb){ lb.style.marginLeft=''; });
-    var prev=null;
+    var prev=null, edge=root.getBoundingClientRect().right;
     root.querySelectorAll('.lb').forEach(function(lb){
-      var r=lb.getBoundingClientRect();
-      if(prev && Math.abs(r.top-prev.top)<4 && r.left<prev.right+6){ lb.style.marginLeft=(prev.right+6-r.left)+'px'; r=lb.getBoundingClientRect(); }
+      var r=lb.getBoundingClientRect(), d=0;
+      if(prev && Math.abs(r.top-prev.top)<4 && r.left<prev.right+6) d=prev.right+6-r.left;
+      /* 右端からはみ出す記号は内側へ戻す */
+      if(r.right+d>edge) d=edge-r.right;
+      if(d){ lb.style.marginLeft=d+'px'; r=lb.getBoundingClientRect(); }
       prev=r;
     });
   }
