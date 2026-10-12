@@ -506,6 +506,43 @@ body{
 .q-end-sub{ margin:12px 0 30px; font-size:14px; color:var(--onbg2); }
 
 #viewer .hint{ color:var(--onbg2); }
+/* カードを開いた画面：左右の ‹ › とスワイプでめくる。下に「覚えた気がする」 */
+#viewer{ justify-content:flex-start; overflow-y:auto; }
+#viewer > *{ flex-shrink:0; }
+#viewer > .v-top{ margin-top:auto; }
+#viewer > .v-chat{ margin-bottom:auto; }
+.v-n{ position:absolute; top:calc(env(safe-area-inset-top,0px) + 22px); right:18px; font-size:12px; color:var(--onbg2); letter-spacing:.1em; }
+.v-top{ position:relative; display:flex; align-items:center; justify-content:center; width:100%; padding-top:36px; }
+.v-nav{ position:absolute; top:calc(50% + 18px); transform:translateY(-50%); z-index:2; appearance:none; border:0; background:none; cursor:pointer;
+  font-family:"Fraunces",Georgia,serif; font-size:34px; line-height:1; color:var(--onbg2); padding:14px 6px; }
+.v-nav.prev{ left:max(0px, calc(50% - 150px - 40px)); } .v-nav.next{ right:max(0px, calc(50% - 150px - 40px)); }
+.v-nav[hidden]{ display:none; }
+.v-nav:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; border-radius:8px; }
+@media (prefers-reduced-motion:no-preference){
+  #viewerStage.in-l{ animation:v-in-l .28s ease-out; } #viewerStage.in-r{ animation:v-in-r .28s ease-out; }
+}
+@keyframes v-in-l{ from{ transform:translateX(40px); opacity:0 } to{ transform:none; opacity:1 } }
+@keyframes v-in-r{ from{ transform:translateX(-40px); opacity:0 } to{ transform:none; opacity:1 } }
+.v-claim{ margin-top:16px; }
+.v-claim[hidden]{ display:none; }
+.v-chat{ width:min(100%,380px); display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+.v-chat:empty{ display:none; }
+#viewer .msg p, #ctest .msg p{ margin:0; padding:8px 12px; border-radius:16px; font-size:14.5px; line-height:1.7; white-space:pre-wrap; word-break:break-word; }
+/* コレクションテスト（LINE 風）。4択は KANTAくん側の吹き出しから選ぶ */
+.coll-test{ margin:0 0 18px; }
+#ctest{ justify-content:flex-start; overflow-y:auto; padding-top:calc(env(safe-area-inset-top,0px) + 60px); }
+#ctest > *{ flex-shrink:0; }
+.ct-log{ width:min(100%,420px); display:flex; flex-direction:column; gap:10px; padding-bottom:30px; }
+.ct-opts{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin:2px 0 0; padding-right:39px; }
+.ct-opt{ appearance:none; font:inherit; cursor:pointer; max-width:82%; text-align:left; padding:9px 14px; border-radius:16px; border-bottom-right-radius:4px;
+  background:#fff; color:#14321b; border:1.5px solid #2e9d5a; font-size:14.5px; line-height:1.5; }
+.ct-opt.en{ font-family:"Fraunces",Georgia,serif; font-size:17px; }
+.ct-opt:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
+.msg p.en{ font-family:"Fraunces",Georgia,serif; font-size:17px; }
+.msg .blank{ display:inline-block; min-width:3em; border-bottom:2px solid #2e9d5a; color:transparent; margin:0 .1em; line-height:1.2; }
+.msg .sentq{ display:block; margin-top:6px; font-family:"Fraunces",Georgia,serif; font-size:16px; line-height:1.75; }
+.ct-end{ align-self:center; margin-top:14px; }
+.tile .lrn{ font-style:normal; font-size:9.5px; color:var(--hint); line-height:1.3; }
 </style>
 </head>
 <body>
@@ -562,8 +599,15 @@ body{
 <!-- 3. カード -->
 <section class="screen" id="viewer">
   <button type="button" class="x" id="viewerClose" aria-label="閉じる">×</button>
-  <div class="stage" id="viewerStage"></div>
-  <div class="hint">タップで裏面　／　長押しで語源</div>
+  <div class="v-n" id="viewerN"></div>
+  <div class="v-top">
+    <button type="button" class="v-nav prev" id="viewerPrev" aria-label="前のカード">‹</button>
+    <div class="stage" id="viewerStage"></div>
+    <button type="button" class="v-nav next" id="viewerNext" aria-label="次のカード">›</button>
+  </div>
+  <div class="hint">タップで裏面　／　長押しで語源　／　左右にめくる</div>
+  <button type="button" class="btn v-claim" id="claimBtn">覚えた気がする</button>
+  <div class="v-chat" id="viewerChat" aria-live="polite"></div>
 </section>
 
 <!-- 4. コレクション -->
@@ -582,6 +626,7 @@ body{
   </div>
   <div class="coll-view" id="collView" hidden>
     <h2 class="h2" id="collTitle"></h2>
+    <button type="button" class="btn primary coll-test" id="ctBtn">コレクションテスト</button>
     <div class="grid" id="grid"></div>
   </div>
 </section>
@@ -602,6 +647,13 @@ body{
   <div class="q-end-sub" id="qEndSub"></div>
   <div class="q-got" id="qGot"></div>
   <button type="button" class="btn primary" id="quizEndHome">ホームへ</button>
+</section>
+
+<!-- コレクションテスト（LINE 風） -->
+<section class="screen" id="ctest">
+  <button type="button" class="x" id="ctClose" aria-label="やめる">×</button>
+  <div class="q-n" id="ctN"></div>
+  <div class="ct-log" id="ctLog" aria-live="polite"></div>
 </section>
 
 <div class="flash" id="flash"></div>
@@ -1182,9 +1234,10 @@ body{
       +(os.length ? '出会った一文：\n'+os.join('\n')+'\n' : '')
       +(mis.length ? 'KANTAくんの誤読：'+mis.join('、')+'\n' : '');
   }
-  function bubble(who, text, extra){
+  function bubble(who, text, extra){ return bubbleHTML(who, esc(text), extra); }
+  function bubbleHTML(who, html, extra, pcls){
     return '<div class="msg '+who+(extra ? ' '+extra : '')+'"><span class="av" aria-hidden="true">'+(who==='k' ? 'K' : '先')+'</span>'
-      +'<div class="bub"><span class="who">'+(who==='k' ? 'KANTAくん' : 'Claude先生')+'</span><p>'+esc(text)+'</p></div></div>';
+      +'<div class="bub"><span class="who">'+(who==='k' ? 'KANTAくん' : 'Claude先生')+'</span><p'+(pcls ? ' class="'+pcls+'"' : '')+'>'+html+'</p></div></div>';
   }
   var CHATS='eigo:chats', CHAT_KEEP=200, CHAT_SEND=16;
   function loadChats(){ try{ var o=JSON.parse(localStorage.getItem(CHATS)); return o && typeof o==='object' && !Array.isArray(o) ? o : {}; }catch(e){ return {}; } }
@@ -1239,7 +1292,8 @@ body{
     var form=box.querySelector('form'), input=box.querySelector('input'), btn=form.querySelector('button'), log=box.querySelector('.chat-log');
     var tools=box.querySelector('.chat-tools'), saved=loadChats()[c.id]||[], msgs, busy=false;
     function render(){
-      msgs=saved.map(function(m){ return { role:m.role, content:m.content }; });
+      /* 定型のやりとり（覚えた気がする）は表示だけ。先生が言っていないセリフなので API には送らない */
+      msgs=saved.filter(function(m){ return !m.canned; }).map(function(m){ return { role:m.role, content:m.content }; });
       log.innerHTML=saved.map(function(m){ return bubble(m.role==='user' ? 'k' : 't', m.content); }).join('');
       tools.hidden=!saved.length;
     }
@@ -1532,7 +1586,7 @@ body{
 
     card.addEventListener('pointerdown', function(e){
       if(done || card.dataset.locked) return;
-      if(card.classList.contains('flipped')){ pressing=false; start=performance.now(); moved=false; return; }
+      if(card.classList.contains('flipped')){ pressing=false; start=performance.now(); moved=false; sx=e.clientX; sy=e.clientY; return; }
       pressing=true; moved=false; start=performance.now(); lastSpark=start; sx=e.clientX; sy=e.clientY; pid=e.pointerId;
       try{ card.setPointerCapture(pid); }catch(err){}
       card.classList.add('press');
@@ -1541,6 +1595,8 @@ body{
     });
     card.addEventListener('pointermove', function(e){
       if(Math.abs(e.clientX-sx)>12||Math.abs(e.clientY-sy)>12) moved=true;
+      /* めくれる画面では、横に動かしたら長押しをやめる（スワイプと取り違えない） */
+      if(pressing && card.dataset.swipe && Math.abs(e.clientX-sx)>14) release();
     });
     function up(e){
       if(done || card.dataset.locked) return;
@@ -1565,6 +1621,7 @@ body{
     var el=host.querySelector('.card');
     if(o.flipped) el.classList.add('flipped');
     if(o.locked) el.dataset.locked='1';
+    if(o.swipe) el.dataset.swipe='1';
     if(!o.inert) bindCard(el, c);
     return el;
   }
@@ -1623,7 +1680,7 @@ body{
   /* =====================================================
      画面切り替え
      ===================================================== */
-  var screens=['home','open','result','viewer','collection','quiz','quizEnd'];
+  var screens=['home','open','result','viewer','collection','quiz','quizEnd','ctest'];
   var current=null, homeTimer=0;
   function show(name){
     screens.forEach(function(s){ document.getElementById(s).classList.toggle('on', s===name); });
@@ -1834,6 +1891,7 @@ body{
     $('collTitle').textContent=(collSet==='tr' ? 'TR' : '初級')+'のコレクション';
     var ids=all.filter(function(id){ return collOf(BYID[id])===collSet; });
     var g=$('grid');
+    $('ctBtn').hidden=!ids.length;
     if(!ids.length){ g.innerHTML='<div class="empty" style="grid-column:1/-1">まだカードがありません</div>'; return; }
     g.innerHTML=ids.map(function(id){
       var c=BYID[id], o=S.owned[id];
@@ -1841,14 +1899,113 @@ body{
         +(o.kira ? '<div class="holo"></div>' : '')
         +(srcTr(c) ? '<span class="badge">'+esc(srcTr(c))+'</span>' : '')
         +'<b>'+esc(c.word)+'</b>'
-        +'<span class="tf"><em>会った '+o.met+'回</em><i>'+(o.kira ? '◆◆◆' : '◇◇◇')+'</i></span></button>';
+        +'<span class="tf">'+(!o.kira && o.learned ? '<em class="lrn">知らなかった→覚えた</em>' : '')+'<em>会った '+o.met+'回</em><i>'+(o.kira ? '◆◆◆' : '◇◇◇')+'</i></span></button>';
     }).join('');
+  }
+  function collIds(set){
+    return Object.keys(S.owned).filter(function(id){ return BYID[id] && collOf(BYID[id])===set; })
+      .sort(function(a,b){ return S.owned[a].order-S.owned[b].order; });
+  }
+
+  /* カードを開いた画面：並びはコレクションと同じ（出会った順）。端まで行ったら一周 */
+  var view={ ids:[], i:0 }, claimTimers=[];
+  function stopClaim(){ claimTimers.forEach(clearTimeout); claimTimers=[]; }
+  function openView(d){
+    stopClaim();
+    var id=view.ids[view.i], c=BYID[id], st=$('viewerStage');
+    var card=mountCard(st, c, { kira:S.owned[id].kira, swipe:true });
+    st.classList.remove('in-l','in-r');
+    if(d){ void st.offsetWidth; st.classList.add(d>0 ? 'in-l' : 'in-r'); }
+    $('viewerN').textContent=view.ids.length>1 ? (view.i+1)+' / '+view.ids.length : '';
+    $('viewerPrev').hidden=$('viewerNext').hidden=view.ids.length<2;
+    $('viewerChat').innerHTML='';
+    renderClaim();
+    /* 「覚えた気がする」は表を見ているときだけ */
+    new MutationObserver(renderClaim).observe(card, { attributes:true, attributeFilter:['class'] });
+  }
+  function renderClaim(){
+    var id=view.ids[view.i], card=$('viewerStage').querySelector('.card'), b=$('claimBtn');
+    b.hidden=!card || card.classList.contains('flipped');
+    var claimed=!!(S.owned[id] && S.owned[id].claim);
+    b.disabled=claimed; b.textContent=claimed ? '次のコレクションテストで確かめます' : '覚えた気がする';
+  }
+  function turn(d){
+    if(current!=='viewer' || view.ids.length<2 || etymCard || psg.classList.contains('on')) return;
+    view.i=(view.i+d+view.ids.length)%view.ids.length;
+    openView(d);
   }
   $('grid').addEventListener('click', function(e){
     var t=e.target.closest('.tile'); if(!t) return;
-    var id=t.dataset.id;
-    mountCard($('viewerStage'), BYID[id], { kira:S.owned[id].kira });
+    view.ids=collIds(collSet); view.i=Math.max(0, view.ids.indexOf(t.dataset.id));
     show('viewer');
+    openView(0);
+  });
+  $('viewerPrev').addEventListener('click', function(){ turn(-1); });
+  $('viewerNext').addEventListener('click', function(){ turn(1); });
+  (function(){
+    var st=$('viewerStage'), x0=0, y0=0, t0=0, on=false;
+    st.addEventListener('pointerdown', function(e){ on=true; x0=e.clientX; y0=e.clientY; t0=performance.now(); });
+    st.addEventListener('pointerup', function(e){
+      if(!on) return; on=false;
+      var dx=e.clientX-x0, dy=e.clientY-y0;
+      if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)*1.3 && performance.now()-t0<900) turn(dx<0 ? 1 : -1);
+    });
+    st.addEventListener('pointercancel', function(){ on=false; });
+  })();
+  document.addEventListener('keydown', function(e){
+    if(current!=='viewer' || e.target.closest('input,textarea')) return;
+    if(e.key==='ArrowRight') turn(1);
+    if(e.key==='ArrowLeft') turn(-1);
+  });
+
+  /* 覚えた気がする：定型の掛け合い（API は使わない）。語ごとの会話の記録に残し、次のコレクションテストで先に出す */
+  var CLAIM_T=['ほんとですかね。まあ、信じましょう。',
+    '「気がする」が少し気になりますが……今回は信じます。',
+    'その言葉、前にも聞いた気がしますね。でも、信じましょう。',
+    'ほう。では、その自信を覚えておきますね。',
+    '気がする、ですか。まあ、気がするのも大事な一歩です。',
+    '本当ですか？ 顔に「たぶん」と書いてありますよ。……信じますけど。',
+    'わかりました。信じます。半分くらい。',
+    'いいですね。その「気」が本物かどうか、楽しみにしています。',
+    'ふむ。疑うのも失礼なので、ここは信じておきましょう。',
+    'では、そういうことにしておきましょう。'];
+  var CLAIM_K=['本当ですからね。次の小テスト、見ててください！',
+    '疑ってますね？ テストで証明してみせます！',
+    '次のテストで出たら、一瞬で答えますから！',
+    '今回は本当です。たぶん。いや、本当です！',
+    '見ててください。次は迷わず選びます！',
+    '信じてくれてありがとうございます。裏切りません！',
+    'テストで出してください。自信あります！',
+    '今度こそ大丈夫です。次の小テストで分かります！',
+    'ふふふ、次のテストを楽しみにしててください。',
+    '覚えました。……気がするじゃなくて、覚えました！'];
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  /* 吹き出しを「…」のあとに出す。lead は「…」を出しておく時間 */
+  function talk(log, who, html, lead, timers, pcls){
+    return new Promise(function(res){
+      var t=null;
+      timers.push(setTimeout(function(){
+        if(lead){ log.insertAdjacentHTML('beforeend', bubble(who, '…', 'typing')); t=log.lastElementChild; scrollEnd(t); }
+        timers.push(setTimeout(function(){
+          if(t) t.remove();
+          log.insertAdjacentHTML('beforeend', bubbleHTML(who, html, 'new', pcls)); scrollEnd(log.lastElementChild); res();
+        }, lead||0));
+      }, 0));
+    });
+  }
+  function scrollEnd(el){ if(el && el.scrollIntoView) el.scrollIntoView({ block:'nearest', behavior:'smooth' }); }
+  $('claimBtn').addEventListener('click', function(){
+    var id=view.ids[view.i], c=BYID[id], o=S.owned[id]; if(!o || o.claim) return;
+    var k1='先生、この《'+c.word+'》覚えた気がします！', t1=pick(CLAIM_T), k2=pick(CLAIM_K), now=Date.now();
+    o.claim=now; save(); renderClaim();
+    var all=loadChats();
+    all[id]=(all[id]||[]).concat([{ role:'user', content:k1, at:now, canned:true }, { role:'assistant', content:t1, at:now, canned:true }, { role:'user', content:k2, at:now, canned:true }]).slice(-CHAT_KEEP);
+    saveChats(all);
+    stopClaim();
+    var log=$('viewerChat'); log.innerHTML='';
+    talk(log, 'k', esc(k1), 0, claimTimers)
+      .then(function(){ return talk(log, 't', esc(t1), 1300, claimTimers); })
+      .then(function(){ return talk(log, 'k', esc(k2), 1100, claimTimers); });
   });
   $('collBtn').addEventListener('click', function(){ collSet=null; renderCollection(); show('collection'); });
   document.querySelectorAll('.coll-btn').forEach(function(b){
@@ -1858,7 +2015,7 @@ body{
     if(collSet){ collSet=null; renderCollection(); return; }
     show('home');
   });
-  $('viewerClose').addEventListener('click', function(){ renderCollection(); show('collection'); });
+  $('viewerClose').addEventListener('click', function(){ stopClaim(); renderCollection(); show('collection'); });
 
   /* 保存：JSON の書き出し／読み込み */
   $('forgetKeyBtn').addEventListener('click', function(){
@@ -1954,15 +2111,18 @@ body{
     show('quiz');
     renderQ();
   }
+  /* 4択：誤答は同じ区分から。足りないとき（出会った語の新規など）は同じテストの範囲から補う */
+  function optionsFor(w, set){
+    var ok=function(x){ return x.id!==w.id && x.meaning!==w.meaning && x.word!==w.word; };
+    var others=shuffle(QITEMS.filter(function(x){ return x.group===w.group && ok(x); })).slice(0,3);
+    if(others.length<3) others=others.concat(shuffle(QITEMS.filter(function(x){ return quizSetOf(x)===set && !x.con===!w.con && ok(x) && others.indexOf(x)<0; })).slice(0,3-others.length));
+    return shuffle([w].concat(others));
+  }
   function renderQ(){
     var w=Q.items[Q.i], enja=Q.i%2===0, qw=$('qWord');
     S.quizLog[w.id]=dayKey(); save();
     $('qN').textContent=(Q.i+1)+' / '+Q.items.length;
-    var ok=function(x){ return x.id!==w.id && x.meaning!==w.meaning && x.word!==w.word; };
-    var others=shuffle(QITEMS.filter(function(x){ return x.group===w.group && ok(x); })).slice(0,3);
-    /* 誤答が足りないとき（出会った語の新規など）は、同じテストの範囲から補う */
-    if(others.length<3) others=others.concat(shuffle(QITEMS.filter(function(x){ return quizSetOf(x)===Q.set && !x.con===!w.con && ok(x) && others.indexOf(x)<0; })).slice(0,3-others.length));
-    var opts=shuffle([w].concat(others)), label;
+    var opts=optionsFor(w, Q.set), label;
     if(w.con){
       var bl=blankSentence(w.sentence, w.word);
       $('qDir').textContent=bl.hits ? '空所に入る構文' : 'この一文の構文';
@@ -2022,6 +2182,103 @@ body{
   $('quizEndHome').addEventListener('click', function(){ show('home'); });
 
   /* =====================================================
+     6. コレクションテスト：持っているカードの中から5問。LINE 風に先生が出題し、KANTAくん側の吹き出しから選ぶ。
+        「覚えた気がする」と言った語から先に出す。同じ日の再出題の決まりは当てはめない。
+        正解：1ポイント、キラ → ノーマル（覚えた）。不正解：キラに戻す。セリフは定型からランダム（API は使わない）
+     ===================================================== */
+  var CT_LINES={
+    claimOk:{ t:['おお、本当に覚えていましたね。疑ってすみません。', '正解です。「気がする」じゃなくて、本当に覚えてましたね。', 'やりますね。約束どおりです。', '正解。これはもう、覚えたと言っていいですね。', 'お見事。宣言どおりでした。'],
+              k:['ほら！ 言ったじゃないですか！', 'やった！ 信じてもらえてよかったです。', '当然です（内心ほっとしてます）。', 'よし！ 覚えた気がしたのは本物でした。', 'ふふん。次もどんどん出してください。'] },
+    claimNg:{ t:['覚えたって言ってましたよね？ 覚えてないじゃないですか笑', 'あれ？ 「覚えた気がする」の「気がする」のほうでしたね笑', '……約束はどこへ行ったんでしょう笑', 'さっきの自信はどこへ行きました？笑', 'これは「覚えた気がしていた」でしたね笑'],
+              k:['うわあ……完全に覚えたと思ったのに。', 'そんな……あのときは覚えてたんです……！', 'くっ……もう一回、覚え直します。', '恥ずかしい……次こそは本当に。', '気がしただけでした……。'] },
+    ok:{ t:['正解です。よく分かってますね。', '正解。迷いがなかったですね。', 'その通りです。', '正解です。この調子でいきましょう。', 'いいですね、正解です。'],
+         k:['よし！', 'これは分かりました！', 'やった、正解！', 'ふう、合ってた。', '余裕です（たぶん）。'] },
+    ng:{ t:['残念、違います。', '惜しい……いえ、違います。', 'そこは引っかかりやすいところです。', '違います。でも、ここで間違えたら覚えられます。', 'ううん、違いますね。'],
+         k:['あっ……そっちでしたか。', 'くやしい……！', '覚えたつもりだったのに……。', '次は間違えません。', 'えっ、そうなんですか。'] }
+  };
+  var CT=null;
+  function ctStop(){ if(CT){ CT.timers.forEach(clearTimeout); CT=null; } }
+  function startCollTest(set){
+    ctStop();
+    var own=QITEMS.filter(function(w){ return quizSetOf(w)===set && S.owned[w.id]; });
+    if(!own.length) return;
+    var claimed=shuffle(own.filter(function(w){ return S.owned[w.id].claim; })).sort(function(a,b){ return S.owned[a.id].claim-S.owned[b.id].claim; });
+    var rest=shuffle(own.filter(function(w){ return !S.owned[w.id].claim; }));
+    CT={ set:set, items:claimed.concat(rest).slice(0,5), i:0, got:0, toNormal:[], toKira:[], timers:[] };
+    var log=$('ctLog'); log.innerHTML=''; $('ctN').textContent='';
+    show('ctest'); $('ctest').scrollTop=0;
+    var intro=(set==='tr' ? 'TR' : '初級')+'のコレクションから'+CT.items.length+'問出します。'
+      +(claimed.length ? '\nまずは「覚えた気がする」と言っていた語からいきますよ。' : '');
+    var run=CT;
+    talk(log, 't', esc(intro), 900, run.timers).then(function(){ if(CT===run) ctAsk(); });
+  }
+  function ctAsk(){
+    var run=CT, w=run.items[run.i], log=$('ctLog'), enja=run.i%2===0, html, pcls='';
+    $('ctN').textContent=(run.i+1)+' / '+run.items.length;
+    var n='第'+(run.i+1)+'問。';
+    if(w.con){
+      enja=false;
+      html=esc(n+(blankSentence(w.sentence, w.word).hits ? '空所に入る構文はどれでしょう？' : 'この一文の構文はどれでしょう？'))+'<span class="sentq">'+blankSentence(w.sentence, w.word).html+'</span>';
+    }else if(enja){
+      html=esc(n+'《'+w.word+'》の意味はどれでしょう？');
+    }else{
+      html=esc(n+'「'+w.meaning+'」を英語で言うと？');
+    }
+    var opts=optionsFor(w, run.set), label=function(x){ return enja ? x.meaning : x.word; };
+    talk(log, 't', html, 1000, run.timers).then(function(){
+      if(CT!==run) return;
+      log.insertAdjacentHTML('beforeend', '<div class="ct-opts">'+opts.map(function(x){
+        return '<button type="button" class="ct-opt'+(enja ? '' : ' en')+'" data-id="'+esc(x.id)+'">'+esc(label(x))+'</button>';
+      }).join('')+'</div>');
+      var box=log.lastElementChild; scrollEnd(box);
+      box.addEventListener('click', function(e){
+        var b=e.target.closest('.ct-opt'); if(!b || CT!==run) return;
+        var x=opts.filter(function(o){ return o.id===b.dataset.id; })[0];
+        box.remove();
+        log.insertAdjacentHTML('beforeend', bubbleHTML('k', esc(label(x)), 'new', enja ? '' : 'en')); scrollEnd(log.lastElementChild);
+        ctJudge(w, x.id===w.id, label(w));
+      });
+    });
+  }
+  function ctJudge(w, right, answer){
+    var run=CT, log=$('ctLog'), o=S.owned[w.id], c=BYID[w.id];
+    var lines=CT_LINES[(o.claim ? 'claim' : '')+(right ? (o.claim ? 'Ok' : 'ok') : (o.claim ? 'Ng' : 'ng'))];
+    if(right){
+      run.got++; S.points++;
+      if(o.kira){ o.kira=false; o.learned=Date.now(); run.toNormal.push(c.word); }
+    }else{
+      if(!o.kira){ o.kira=true; run.toKira.push(c.word); }
+      delete o.learned;
+    }
+    delete o.claim; save();
+    var t=pick(lines.t)+(right ? '' : '\n正解は「'+answer+'」です。');
+    talk(log, 't', esc(t), 1300, run.timers)
+      .then(function(){ return CT===run && talk(log, 'k', esc(pick(lines.k)), 1000, run.timers); })
+      .then(function(){
+        if(CT!==run) return;
+        run.i++;
+        if(run.i<run.items.length){ ctAsk(); return; }
+        ctEnd();
+      });
+  }
+  function ctEnd(){
+    var run=CT, log=$('ctLog');
+    var t='今日はここまで。'+run.items.length+'問中'+run.got+'問正解で、+'+run.got+'ポイントです（いま '+S.points+'ポイント）。'
+      +(run.toNormal.length ? '\nキラ → ノーマル：'+run.toNormal.join('、') : '')
+      +(run.toKira.length ? '\nノーマル → キラ：'+run.toKira.join('、') : '');
+    talk(log, 't', esc(t), 1200, run.timers).then(function(){
+      if(CT!==run) return;
+      $('ctN').textContent='';
+      log.insertAdjacentHTML('beforeend', '<button type="button" class="btn primary ct-end">コレクションに戻る</button>');
+      var b=log.lastElementChild; scrollEnd(b);
+      b.addEventListener('click', ctClose);
+    });
+  }
+  function ctClose(){ ctStop(); renderCollection(); show('collection'); }
+  $('ctBtn').addEventListener('click', function(){ startCollTest(collSet); });
+  $('ctClose').addEventListener('click', ctClose);
+
+  /* =====================================================
      起動
      ===================================================== */
   S=load();
@@ -2035,7 +2292,8 @@ body{
     CARDS.forEach(function(c){ BYID[c.id]=c; });
     APPROVED=CARDS.filter(function(c){ return c.status==='approved'; });
     /* 誤読の記録がある手持ちは、あとから誤読が付いた語も含めてキラにする */
-    Object.keys(S.owned).forEach(function(id){ if(BYID[id] && misreads(BYID[id]).length) S.owned[id].kira=true; });
+    /* ただし、コレクションテストで覚えたことを確かめた語（learned）はノーマルのまま */
+    Object.keys(S.owned).forEach(function(id){ if(BYID[id] && misreads(BYID[id]).length && !S.owned[id].learned) S.owned[id].kira=true; });
     buildQuiz();
     /* TR セットを入れた日に限り、ゲージを2パック分足す（一度だけ） */
     if(!S.trBonus && APPROVED.some(function(c){ return c.set==='tr'; })){
