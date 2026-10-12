@@ -101,6 +101,7 @@ body{
 .fig{ margin:2px 0 0; }
 .pills{ display:flex; gap:5px; flex-wrap:wrap; }
 .pills span{ font-size:11px; padding:2px 8px; border-radius:10px; background:#E1F5EE; color:#085041; }
+.pills span.mis{ background:#fbe7e4; color:#8a2318; }
 .pills span.n{ background:#EEEDFE; color:#3C3489; }
 .core{ font-size:11.5px; color:var(--muted); line-height:1.55; border-top:1px solid var(--line); padding-top:7px; }
 .ex{ border-top:1px solid var(--line); padding-top:7px; display:flex; flex-direction:column; gap:5px; }
@@ -223,6 +224,43 @@ body{
   font:inherit; font-size:13px; padding:8px 16px; border-radius:20px;
 }
 .etym button:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
+/* Claude先生に聞く（LINE 風の掛け合い。bunka-cards と同じ形） */
+.chat{ margin:4px 0 22px; max-width:34em; background:#eef1ea; border-radius:14px; padding:12px 10px 10px; }
+.etym h1 + .chat{ margin-top:22px; }
+.chat-log{ display:flex; flex-direction:column; gap:10px; margin-bottom:10px; }
+.chat-log:empty{ display:none; }
+.chat-tools{ display:flex; justify-content:flex-end; margin:-4px 0 6px; }
+.chat-tools[hidden]{ display:none; }
+.etym .chat .chat-tools button{ background:none; border:0; color:var(--hint); font-size:11.5px; padding:2px 4px; text-decoration:underline; text-underline-offset:2px; }
+.chat-etym{ margin:0 0 8px; }
+.etym .chat .chat-etym button{ background:#fff; color:#1f7a44; border:1px solid #2e9d5a; }
+.msg{ display:flex; align-items:flex-end; gap:7px; }
+.msg.k{ flex-direction:row-reverse; }
+.msg .av{ flex:none; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; background:#fff; }
+.msg.t .av{ border:2px solid #9a9a9a; color:#6b6b6b; font-family:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif; }
+.msg.k .av{ border:2px solid #2e9d5a; color:#1f7a44; }
+.msg .who{ display:block; font-size:10.5px; color:var(--hint); margin:0 4px 2px; }
+.msg.k .who{ text-align:right; }
+.msg .bub{ max-width:78%; }
+.etym .msg p{ margin:0; padding:8px 12px; border-radius:16px; font-size:14.5px; line-height:1.7; white-space:pre-wrap; word-break:break-word; max-width:none; }
+.msg.t p{ background:#fff; color:var(--ink); border-bottom-left-radius:4px; }
+.msg.k p{ background:#a8e6a0; color:#14321b; border-bottom-right-radius:4px; }
+.etym .msg.err p{ background:#fbe7e4; color:#7a1f17; font-size:13px; }
+.msg.typing p{ color:var(--hint); letter-spacing:.2em; }
+@keyframes fg-in{ from{ opacity:0; transform:translateY(4px) } to{ opacity:1; transform:none } }
+@media (prefers-reduced-motion:no-preference){ .msg.typing p{ animation:breathe 1.2s ease-in-out infinite; } .msg.new{ animation:fg-in .25s ease-out; } }
+.chat form{ display:flex; gap:8px; align-items:center; }
+.chat input{ flex:1; min-width:0; font:inherit; font-size:16px; padding:8px 14px; border-radius:20px; border:1px solid var(--line); background:#fff; color:var(--ink); }
+.chat input:focus-visible{ outline:2px solid #2e9d5a; outline-offset:1px; }
+.etym .chat form button{ flex:none; font-size:13px; padding:8px 14px; background:#2e9d5a; border-color:#2e9d5a; color:#fff; }
+.chat.nokey button, .etym .chat button:disabled{ color:var(--hint); background:var(--face2); border-color:var(--line); border-style:dashed; }
+.keydlg{ border:0; border-radius:16px; padding:22px 20px 18px; width:min(92vw,360px); background:var(--face); color:var(--ink); box-shadow:0 20px 50px -20px rgba(0,0,0,.6); }
+.keydlg::backdrop{ background:rgba(20,22,20,.55); }
+.keydlg h3{ margin:0 0 8px; font-size:16px; }
+.keydlg p{ margin:0 0 14px; font-size:12.5px; line-height:1.7; color:var(--muted); }
+.keydlg input{ width:100%; font:inherit; font-size:16px; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--ink); }
+.keydlg .row2{ display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+.keydlg .btn{ font-size:14px; padding:9px 18px; }
 .flash{ position:fixed; inset:0; background:#fff; pointer-events:none; opacity:0; z-index:19; }
 .flash.go{ animation:flash .55s ease-out; }
 @keyframes flash{ 0%{opacity:0} 18%{opacity:.95} 100%{opacity:0} }
@@ -466,6 +504,7 @@ body{
   <div class="save">
     <button type="button" class="btn" id="exportBtn">書き出し</button>
     <button type="button" class="btn" id="importBtn">読み込み</button>
+    <button type="button" class="btn" id="forgetKeyBtn">鍵を消す</button>
     <input type="file" id="importFile" accept="application/json,.json" hidden>
   </div>
 </section>
@@ -489,6 +528,14 @@ body{
 
 <div class="flash" id="flash"></div>
 <section class="etym" id="etym" aria-hidden="true"></section>
+<dialog class="keydlg" id="keyDlg">
+  <form method="dialog">
+    <h3>Anthropic の API キー</h3>
+    <p>この端末のブラウザにだけ保存します。書き出しのファイルには含めません。消すときはコレクション画面の「鍵を消す」から。</p>
+    <input type="password" id="keyInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…" aria-label="API キー">
+    <div class="row2"><button type="button" class="btn" id="keyCancel">やめる</button><button type="submit" class="btn primary" id="keySave">保存</button></div>
+  </form>
+</dialog>
 
 <script>
 (function(){
@@ -918,24 +965,37 @@ body{
 
   /* ---- カード（表・裏） ---- */
   var seq=0;
+  /* 出自バッジ（TR 番号）と誤読。met は origin から、tr は tr から */
+  function srcTr(c){
+    if(c.tr) return c.tr;
+    var t=(c.origin||[]).map(function(o){ return o.tr; }).filter(Boolean);
+    return t[0]||'';
+  }
+  function misreads(c){
+    var out=[];
+    (c.origin||[]).forEach(function(o){ if(o.misread && out.indexOf(o.misread)<0) out.push(o.misread); });
+    return out;
+  }
   function sizeClass(w){ return w.length>14 ? ' class="xl"' : w.length>9 ? ' class="l"' : ''; }
   function cardHTML(c, kira){
     var uid='c'+(++seq)+'-'+c.id.replace(/[^\w-]/g,'_');
     var pills=(c.senses||[]).map(function(s){ return '<span>'+esc(s)+'</span>'; }).join('')
-      +(c.senses_noun||[]).map(function(s){ return '<span class="n">名：'+esc(s)+'</span>'; }).join('');
+      +(c.senses_noun||[]).map(function(s){ return '<span class="n">名：'+esc(s)+'</span>'; }).join('')
+      +misreads(c).map(function(m){ return '<span class="mis">誤読：'+esc(m)+'</span>'; }).join('');
+    var badge=srcTr(c);
     var ex=(c.examples||[]).map(function(e){
       return '<p>'+emphasize(e.en, e.focus)+'<small>'+esc(e.ja)+'</small></p>';
     }).join('');
     return ''
       +'<div class="card'+(kira ? ' kira' : '')+'" role="button" tabindex="0" aria-label="'+esc(c.word)+' のカード。タップで裏返す、長押しで語源">'
       +  '<div class="face front">'
-      +    '<div class="word"><b'+sizeClass(c.word)+'>'+esc(c.word)+'</b>'+(c.tr ? '<span class="badge">'+esc(c.tr)+'</span>' : '<span>'+esc(c.pos)+'</span>')+'</div>'
+      +    '<div class="word"><b'+sizeClass(c.word)+'>'+esc(c.word)+'</b>'+(badge ? '<span class="badge">'+esc(badge)+'</span>' : '<span>'+esc(c.pos)+'</span>')+'</div>'
       +    (c.ipa||c.kana ? '<div class="pron"><code>'+esc(c.ipa||'')+'</code><span>'+esc(c.kana||'')+'</span></div>' : '')
       +    figure(c.image, uid)
       +    '<div class="pills">'+pills+'</div>'
       +    (c.core ? '<div class="core">'+esc(c.core)+'</div>' : '')
       +    (ex ? '<div class="ex">'+ex+'</div>' : '')
-      +    '<div class="foot"><span>'+(c.set==='tr' ? '必修英文100題' : '初級語　'+esc(CATEGORY[c.category]||''))+'</span><i>'+(kira ? '◆◆◆' : '◇◇◇')+'</i></div>'
+      +    '<div class="foot"><span>'+(c.set==='met' ? '出会った語' : c.set==='tr' ? '必修英文100題' : '初級語　'+esc(CATEGORY[c.category]||''))+'</span><i>'+(kira ? '◆◆◆' : '◇◇◇')+'</i></div>'
       +    (kira ? '<div class="holo"></div>' : '')
       +    '<div class="sheen"></div>'
       +  '</div>'
@@ -961,19 +1021,191 @@ body{
     if(i<0) return esc(sent);
     return esc(sent.slice(0,i))+'<b>'+esc(sent.slice(i,i+key.length))+'</b>'+esc(sent.slice(i+key.length));
   }
+  function chatBoxHTML(){
+    return '<div class="chat'+(apiKey() ? '' : ' nokey')+'"><div class="chat-log" aria-live="polite"></div>'
+      +'<div class="chat-tools" hidden><button type="button" class="chat-clear">この会話を消す</button></div>'
+      +'<div class="chat-etym"><button type="button" class="chat-go" data-q="この語の語源を教えてください">語源を聞く</button></div>'
+      +'<form><input type="text" maxlength="200" enterkeyhint="send" placeholder="KANTAくんとして先生に聞く" aria-label="Claude先生に聞く"><button type="submit">送信</button></form></div>';
+  }
+  /* 長押し面（E-origin）：1 出会った一文（語を太字） 2 確認済みの語源だけ 3 Claude に聞く欄。出自のない語は 2 から */
   function etymHTML(c){
-    if(c.set==='tr'){
-      return '<h1'+(c.word.length>10 ? ' class="l"' : '')+'>'+esc(c.word)+'</h1>'
-        +'<p class="old">'+esc(c.tr)+'</p>'
-        +(c.sentence ? '<p class="sent">'+boldIn(c.sentence, c.word)+'</p>' : '')
-        +'<div class="src"><span></span><button type="button" class="close">カードに戻る</button></div>';
-    }
+    var os=(c.origin||[]).filter(function(o){ return o.sentence; });
+    if(!os.length && c.sentence) os=[{ tr:c.tr, sentence:c.sentence }];
+    var trs=(c.origin||[]).map(function(o){ return o.tr; }).filter(Boolean);
+    if(!trs.length && c.tr) trs=[c.tr];
+    trs=trs.filter(function(t,i){ return trs.indexOf(t)===i; });
     var et=c.etymology||{};
-    return ''
-      +'<h1'+(c.word.length>10 ? ' class="l"' : '')+'>'+esc(c.word)+'</h1>'
-      +'<p class="old">'+esc(et.origin||'')+'</p>'
-      +(et.paragraphs||[]).map(function(p){ return '<p>'+esc(p)+'</p>'; }).join('')
-      +'<div class="src"><span>'+(et.verified ? '' : '語源：要確認（辞書で検証する）')+'</span><button type="button" class="close">カードに戻る</button></div>';
+    return '<h1'+(c.word.length>10 ? ' class="l"' : '')+'>'+esc(c.word)+'</h1>'
+      +(trs.length ? '<p class="old">'+esc(trs.join('・'))+'</p>' : (c.set==='met' ? '<p class="old">出会った語</p>' : ''))
+      +os.map(function(o){ return '<p class="sent">'+boldIn(o.sentence, c.word)+'</p>'; }).join('')
+      +(et.verified ? (et.origin ? '<p class="old">'+esc(et.origin)+'</p>' : '')+(et.paragraphs||[]).map(function(p){ return '<p>'+esc(p)+'</p>'; }).join('') : '')
+      +chatBoxHTML()
+      +'<div class="src"><span></span><button type="button" class="close">カードに戻る</button></div>';
+  }
+
+  /* =====================================================
+     Claude を直接呼ぶ（B-live）。鍵はこの端末の localStorage にだけ置く
+     ===================================================== */
+  var APIKEY='eigo:apikey', MODEL='claude-sonnet-5-5';
+  function apiKey(){ try{ return localStorage.getItem(APIKEY)||''; }catch(e){ return ''; } }
+  function online(){ return navigator.onLine !== false; }
+
+  /* 鍵の入力。保存できたら true で resolve */
+  function askKey(){
+    var dlg=document.getElementById('keyDlg'), input=document.getElementById('keyInput');
+    input.value='';
+    return new Promise(function(resolve){
+      function onClose(){
+        dlg.removeEventListener('close', onClose);
+        var k=dlg.returnValue==='save' ? input.value.trim() : '';
+        input.value='';
+        if(k){ try{ localStorage.setItem(APIKEY, k); }catch(e){} }
+        resolve(!!(k && apiKey()));
+      }
+      dlg.returnValue='';
+      dlg.addEventListener('close', onClose);
+      dlg.showModal();
+      input.focus();
+    });
+  }
+  document.getElementById('keySave').addEventListener('click', function(e){ e.preventDefault(); document.getElementById('keyDlg').close('save'); });
+  document.getElementById('keyCancel').addEventListener('click', function(){ document.getElementById('keyDlg').close(''); });
+
+  /* =====================================================
+     Claude先生に聞く（LINE 風）。右があなた＝KANTAくん、左が Claude先生。
+     先生は会話の流れを踏まえて答える。会話は語ごとに残す（eigo:chats）。書き出しに含め、読み込みで戻す。
+     話し方の手本は bunka-cards の掛け合い（sensei-samples.json、原文のまま）
+     ===================================================== */
+  var SAMPLES={};
+  var SENSEI='あなたは「Claude先生」。『必修英文100題』などで英文読解を学ぶ「KANTAくん」の質問に、LINE のチャットで答える。\n'
+    +'KANTAくんは英単語を字面で誤解したり、カタカナ語や身近な例に引き寄せたり、ちょっとボケたりする。\n'
+    +'答え方：\n'
+    +'・まず誤解があれば、やさしく正す（「〜ではありません」「逆です」）。\n'
+    +'・すぐ核心を短く言う。2〜3文、全体で150字以内（語源を聞かれたときは200字以内でよい）。です・ます調。前置きや見出し、箇条書き、記号での強調は使わない。\n'
+    +'・語源や短い例文、似た語との使い分けを一つ添えると覚えやすい。ボケには軽く乗ってから論点に戻す。\n'
+    +'・下の語カードの内容を前提にする。出会った一文があれば、その文脈に沿って答える。カードにない事実は確かなものだけを述べ、不確かなときはそう言う。\n'
+    +'・KANTAくんの誤読の記録があれば、なぜそう読み違えやすいかにも触れてよい。\n';
+  function sampleDialogs(){
+    return Object.keys(SAMPLES).slice(0, 2).map(function(id){
+      return '（'+id+'）\n'+SAMPLES[id].map(function(m){ return (m.who==='k' ? 'KANTAくん：' : 'Claude先生：')+m.text; }).join('\n');
+    }).join('\n\n');
+  }
+  /* 語カードの内容をそのまま渡す：語・意味・出会った一文・誤読 */
+  function cardContext(c){
+    var os=(c.origin||[]).filter(function(o){ return o.sentence; }).map(function(o){ return (o.tr ? o.tr+'：' : '')+o.sentence; });
+    if(!os.length && c.sentence) os=[(c.tr ? c.tr+'：' : '')+c.sentence];
+    var mis=misreads(c);
+    return '語：'+c.word+'\n'
+      +'意味：'+(c.senses||[]).concat((c.senses_noun||[]).map(function(n){ return '（名）'+n; })).join('／')+'\n'
+      +(os.length ? '出会った一文：\n'+os.join('\n')+'\n' : '')
+      +(mis.length ? 'KANTAくんの誤読：'+mis.join('、')+'\n' : '');
+  }
+  function bubble(who, text, extra){
+    return '<div class="msg '+who+(extra ? ' '+extra : '')+'"><span class="av" aria-hidden="true">'+(who==='k' ? 'K' : '先')+'</span>'
+      +'<div class="bub"><span class="who">'+(who==='k' ? 'KANTAくん' : 'Claude先生')+'</span><p>'+esc(text)+'</p></div></div>';
+  }
+  var CHATS='eigo:chats', CHAT_KEEP=200, CHAT_SEND=16;
+  function loadChats(){ try{ var o=JSON.parse(localStorage.getItem(CHATS)); return o && typeof o==='object' && !Array.isArray(o) ? o : {}; }catch(e){ return {}; } }
+  function saveChats(o){ try{ localStorage.setItem(CHATS, JSON.stringify(o)); }catch(e){} }
+  /* 直近 CHAT_SEND 件を送る。会話は必ず KANTAくん（user）から始まる決まりなので、先頭が先生なら1件落とす。
+     送り直すたびに同じになる部分（新しい質問の1つ前まで）にキャッシュの印を付ける */
+  function chatPayload(msgs){
+    var m=msgs.slice(-CHAT_SEND);
+    if(m.length && m[0].role!=='user') m=m.slice(1);
+    return m.map(function(x, i){
+      return i===m.length-2 ? { role:x.role, content:[{ type:'text', text:x.content, cache_control:{ type:'ephemeral' } }] } : { role:x.role, content:x.content };
+    });
+  }
+
+  function callClaude(system, user){
+    return fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'x-api-key':apiKey(),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+        'content-type':'application/json'
+      },
+      /* Sonnet 5.5 は指定しないと思考してから答え、その分も max_tokens に数えられて本文が途中で切れる。
+         ツールを使わないので between_tools で思考を止め、800 を本文に回す（bunka-cards と同じ） */
+      body:JSON.stringify({ model:MODEL, max_tokens:800, thinking:{ type:'between_tools' }, system:system, messages:Array.isArray(user) ? user : [{ role:'user', content:user }] })
+    }).then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(d){
+        if(!r.ok){ var err=new Error((d.error && d.error.message) || ('HTTP '+r.status)); err.status=r.status; throw err; }
+        if(d.stop_reason==='refusal'){ var rf=new Error('この質問には答えられませんでした'); rf.status='refusal'; throw rf; }
+        var text=(d.content||[]).filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('').trim();
+        if(d.stop_reason==='max_tokens') text+=' …（長さの上限で途中で切れました）';
+        return text;
+      });
+    });
+  }
+
+  /* 圏外のときは送信ボタンを灰色にして「圏外」と出す。カード・開封・小テストは影響なし */
+  function renderNet(){
+    var off=!online();
+    document.querySelectorAll('.chat').forEach(function(box){
+      var busy=!!box.dataset.busy;
+      box.querySelector('form button').disabled=off || busy; box.querySelector('form button').textContent=off ? '圏外' : '送信';
+      box.querySelector('.chat-go').disabled=off || busy; box.querySelector('.chat-go').textContent=off ? '語源を聞く　圏外' : '語源を聞く';
+      box.classList.toggle('nokey', off || !apiKey());
+    });
+  }
+  window.addEventListener('online', renderNet);
+  window.addEventListener('offline', renderNet);
+
+  function bindChat(box, c){
+    var form=box.querySelector('form'), input=box.querySelector('input'), btn=form.querySelector('button'), log=box.querySelector('.chat-log');
+    var tools=box.querySelector('.chat-tools'), saved=loadChats()[c.id]||[], msgs, busy=false;
+    function render(){
+      msgs=saved.map(function(m){ return { role:m.role, content:m.content }; });
+      log.innerHTML=saved.map(function(m){ return bubble(m.role==='user' ? 'k' : 't', m.content); }).join('');
+      tools.hidden=!saved.length;
+    }
+    render();
+    box.querySelector('.chat-clear').addEventListener('click', function(){
+      if(busy || !confirm('《'+c.word+'》の会話を消します')) return;
+      var all=loadChats(); delete all[c.id]; saveChats(all);
+      saved=[]; render();
+    });
+    function add(html){
+      log.insertAdjacentHTML('beforeend', html);
+      var last=log.lastElementChild; if(last && last.scrollIntoView) last.scrollIntoView({ block:'nearest', behavior:'smooth' });
+      return last;
+    }
+    function send(q){
+      if(busy || !online() || !q) return;
+      (apiKey() ? Promise.resolve(true) : askKey()).then(function(ok){
+        box.classList.toggle('nokey', !apiKey());
+        if(!ok) return;
+        input.value='';
+        add(bubble('k', q, 'new'));
+        msgs.push({ role:'user', content:q });
+        busy=true; box.dataset.busy='1'; renderNet();
+        var typing=add(bubble('t', '…', 'typing'));
+        /* 変わらない部分（先生の決まり＋話し方の手本）を先に置き、キャッシュの印を付ける。語ごとに変わる語カードはその後ろ */
+        var system=[{ type:'text', text:SENSEI+'\n【話し方の手本（別の分野の掛け合い）】\n'+sampleDialogs(), cache_control:{ type:'ephemeral' } },
+                    { type:'text', text:'\n【語カード】\n'+cardContext(c) }];
+        callClaude(system, chatPayload(msgs)).then(function(text){
+          typing.remove();
+          text=text || '（答えが空でした）';
+          msgs.push({ role:'assistant', content:text });
+          add(bubble('t', text, 'new'));
+          /* 答えが返った問いと答えの組だけ残す */
+          var now=Date.now(), all=loadChats();
+          saved=saved.concat([{ role:'user', content:q, at:now }, { role:'assistant', content:text, at:now }]).slice(-CHAT_KEEP);
+          all[c.id]=saved; saveChats(all);
+          tools.hidden=false;
+        }, function(err){
+          typing.remove();
+          msgs.pop();   /* 答えられなかった質問は会話に残さない（次に送るときの順番が崩れないように） */
+          add(bubble('t', err.status==='refusal' ? err.message : err.status===401 ? '鍵が正しくないようです。コレクション画面の「鍵を消す」から入れ直してください。'
+            : err.status ? 'うまく答えられませんでした（'+err.status+'：'+err.message+'）' : '通信できませんでした。もう一度送ってください', 'err'));
+        }).then(function(){ busy=false; delete box.dataset.busy; renderNet(); });
+      });
+    }
+    box.querySelector('.chat-go').addEventListener('click', function(){ send(this.dataset.q); });
+    form.addEventListener('submit', function(e){ e.preventDefault(); send(input.value.trim()); });
+    renderNet();
   }
 
   var etym=document.getElementById('etym'), flash=document.getElementById('flash');
@@ -983,6 +1215,7 @@ body{
     etym.innerHTML=etymHTML(c);
     var closeBtn=etym.querySelector('.close');
     closeBtn.addEventListener('click', closeEtym);
+    var cb=etym.querySelector('.chat'); if(cb) bindChat(cb, c);
     etymCard=card; etymDone=onClosed;
     etym.style.setProperty('--cx', x+'px'); etym.style.setProperty('--cy', y+'px');
     setTimeout(function(){
@@ -998,7 +1231,7 @@ body{
     card.classList.remove('burst');
     setTimeout(function(){ etym.classList.remove('hide'); if(done) done(); },520);
   }
-  etym.addEventListener('keydown', function(e){ if(e.key==='Escape') closeEtym(); });
+  etym.addEventListener('keydown', function(e){ if(e.key==='Escape' && !e.target.closest('.chat')) closeEtym(); });
 
   /* ---- 操作（見本と同じ）。card.dataset.locked の間は反応しない ---- */
   function bindCard(card, c){
@@ -1208,15 +1441,18 @@ body{
 
   /* 手持ち3枚（復習）＋未所持2枚（発見）。未所持が足りなければ手持ちで、手持ちが足りなければ未所持で埋める。
      発見を最後に置く。
-     手持ちは「そのセット＋met」から。新規はそのセットだけから（met は新規に出ない）。
+     手持ちは「そのセット＋met」から。
+     新規は met の未所持を先に引き（ランダム）、なくなったらそのセットの未所持から引く。
      TR の新規は TR 番号の小さい順（同じ TR の中はランダム）。初級の新規はランダム */
   function trNum(c){ return parseInt(String(c.tr||'').replace(/\D/g,''),10)||9999; }
   function composePack(set){
     var pool=APPROVED.filter(function(c){ var cs=c.set||'list'; return cs===set || cs==='met'; });
     var ids=pool.map(function(c){ return c.id; });
     var have=shuffle(ids.filter(function(id){ return S.owned[id]; }));
-    var fresh_=shuffle(pool.filter(function(c){ return (c.set||'list')===set && !S.owned[c.id]; }).map(function(c){ return c.id; }));
-    if(set==='tr') fresh_.sort(function(a,b){ return trNum(BYID[a])-trNum(BYID[b]); });
+    var metNew=shuffle(pool.filter(function(c){ return c.set==='met' && !S.owned[c.id]; }).map(function(c){ return c.id; }));
+    var setNew=shuffle(pool.filter(function(c){ return (c.set||'list')===set && !S.owned[c.id]; }).map(function(c){ return c.id; }));
+    if(set==='tr') setNew.sort(function(a,b){ return trNum(BYID[a])-trNum(BYID[b]); });
+    var fresh_=metNew.concat(setNew);
     var n=Math.min(PACK, ids.length);
     var nNew=Math.min(PACK_NEW, fresh_.length);
     var nOld=Math.min(n-nNew, have.length);
@@ -1282,7 +1518,7 @@ body{
       ctl.innerHTML='<button type="button" class="btn" data-k="0">知ってる</button><button type="button" class="btn" data-k="1">知らない</button>';
       ctl.querySelectorAll('button').forEach(function(b){
         b.addEventListener('click', function(){
-          var unknown=b.dataset.k==='1';
+          var unknown=b.dataset.k==='1' || misreads(c).length>0;
           S.owned[e.id]={ order:S.nextOrder++, first:Date.now(), met:1, kira:unknown };
           e.done=true; save();
           if(unknown){ mountCard($('openStage'), c, { kira:true, flipped:true, locked:true }); card=$('openStage').querySelector('.card'); void card.offsetWidth; }
@@ -1360,8 +1596,15 @@ body{
   $('viewerClose').addEventListener('click', function(){ renderCollection(); show('collection'); });
 
   /* 保存：JSON の書き出し／読み込み */
+  $('forgetKeyBtn').addEventListener('click', function(){
+    if(!apiKey()){ alert('鍵はまだ入っていません'); return; }
+    if(!confirm('この端末に保存した API キーを消します')) return;
+    try{ localStorage.removeItem(APIKEY); }catch(e){}
+    renderNet();
+  });
   $('exportBtn').addEventListener('click', function(){
-    var blob=new Blob([JSON.stringify(S, null, 1)], { type:'application/json' });
+    /* 会話（eigo:chats）も含める。鍵は含めない */
+    var blob=new Blob([JSON.stringify(Object.assign({}, S, { chats:loadChats() }), null, 1)], { type:'application/json' });
     var a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='eitango-'+dayKey().replace(/-/g,'')+'.json';
     document.body.appendChild(a); a.click(); a.remove();
@@ -1375,6 +1618,8 @@ body{
       var s; try{ s=JSON.parse(t); }catch(e){ s=null; }
       if(!valid(s)){ alert('このファイルは読み込めません'); return; }
       if(!confirm('いまの記録をこのファイルの内容で置き換えます')) return;
+      if(s.chats && typeof s.chats==='object' && !Array.isArray(s.chats)) saveChats(s.chats);
+      delete s.chats;
       S=s; save(); renderCollection();
     });
   });
@@ -1412,10 +1657,14 @@ body{
     return { html: out+esc(sent.slice(pos)), hits: hits };
   }
   function buildQuiz(){
+    var inWords={}; WORDS.forEach(function(w){ inWords[w.id]=1; });
     QITEMS=WORDS.map(function(w){ return { id:w.id, word:w.word, meaning:w.meaning, set:'list', group:'list:'+w.category }; })
-      .concat(APPROVED.filter(function(c){ return c.set==='tr'; }).map(function(c){
-        var con=isConstruct(c);
-        return { id:c.id, word:c.word, meaning:(c.senses||[])[0]||'', set:'tr', group:con ? 'tr:con' : 'tr', sentence:c.sentence||'', con:con };
+      .concat(APPROVED.filter(function(c){ return (c.set==='tr' || c.set==='met') && !inWords[c.id]; }).map(function(c){
+        var con=isConstruct(c) || (c.set==='met' && c.tr && isConstruct({ set:'tr', word:c.word }));
+        var sent=c.sentence || ((c.origin||[]).filter(function(o){ return o.sentence; })[0]||{}).sentence || '';
+        /* TR から昇格した met は TR の仲間として出す。新しく来た met は met どうし（足りなければ TR から補う） */
+        var grp=c.tr ? (con ? 'tr:con' : 'tr') : 'met';
+        return { id:c.id, word:c.word, meaning:(c.senses||[])[0]||'', set:c.set, group:grp, sentence:sent, con:con && !!sent };
       }));
   }
 
@@ -1432,7 +1681,9 @@ body{
     var w=Q.items[Q.i], enja=Q.i%2===0, qw=$('qWord');
     S.quizLog[w.id]=dayKey(); save();
     $('qN').textContent=(Q.i+1)+' / '+Q.items.length;
-    var others=shuffle(QITEMS.filter(function(x){ return x.group===w.group && x.id!==w.id && x.meaning!==w.meaning && x.word!==w.word; })).slice(0,3);
+    var ok=function(x){ return x.id!==w.id && x.meaning!==w.meaning && x.word!==w.word; };
+    var others=shuffle(QITEMS.filter(function(x){ return x.group===w.group && ok(x); })).slice(0,3);
+    if(others.length<3 && w.group==='met') others=others.concat(shuffle(QITEMS.filter(function(x){ return x.group==='tr' && ok(x); })).slice(0,3-others.length));
     var opts=shuffle([w].concat(others)), label;
     if(w.con){
       var bl=blankSentence(w.sentence, w.word);
@@ -1491,11 +1742,15 @@ body{
   S=load();
   Promise.all([
     fetch('cards.json').then(function(r){ return r.json(); }),
-    fetch('words.json').then(function(r){ return r.json(); })
+    fetch('words.json').then(function(r){ return r.json(); }),
+    /* 話し方の手本。読めなくても掛け合いは使える */
+    fetch('sensei-samples.json').then(function(r){ return r.json(); }).catch(function(){ return {}; })
   ]).then(function(res){
-    CARDS=res[0]; WORDS=res[1];
+    CARDS=res[0]; WORDS=res[1]; SAMPLES=res[2]||{};
     CARDS.forEach(function(c){ BYID[c.id]=c; });
     APPROVED=CARDS.filter(function(c){ return c.status==='approved'; });
+    /* 誤読の記録がある手持ちは、あとから誤読が付いた語も含めてキラにする */
+    Object.keys(S.owned).forEach(function(id){ if(BYID[id] && misreads(BYID[id]).length) S.owned[id].kira=true; });
     buildQuiz();
     /* TR セットを入れた日に限り、ゲージを2パック分足す（一度だけ） */
     if(!S.trBonus && APPROVED.some(function(c){ return c.set==='tr'; })){
