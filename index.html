@@ -2191,7 +2191,15 @@ body{
               k:['ほら！ 言ったじゃないですか！', 'やった！ 信じてもらえてよかったです。', '当然です（内心ほっとしてます）。', 'よし！ 覚えた気がしたのは本物でした。', 'ふふん。次もどんどん出してください。'] },
     claimNg:{ t:['覚えたって言ってましたよね？ 覚えてないじゃないですか笑', 'あれ？ 「覚えた気がする」の「気がする」のほうでしたね笑', '……約束はどこへ行ったんでしょう笑', 'さっきの自信はどこへ行きました？笑', 'これは「覚えた気がしていた」でしたね笑'],
               k:['うわあ……完全に覚えたと思ったのに。', 'そんな……あのときは覚えてたんです……！', 'くっ……もう一回、覚え直します。', '恥ずかしい……次こそは本当に。', '気がしただけでした……。'] },
-    ok:{ t:['正解です。よく分かってますね。', '正解。迷いがなかったですね。', 'その通りです。', '正解です。この調子でいきましょう。', 'いいですね、正解です。'],
+    /* 「覚えた気がする」と言っていないのに正解：宣言なしで覚えていたので、しっかり褒める（先生の落ち着いた口調のまま） */
+    ok:{ t:['正解です。何も言わずに覚えていたんですね。これは立派です。',
+            '正解。宣言もなしに、きちんと身についている。いちばん良い覚え方です。',
+            'お見事です。自分で気づかないうちに覚えている語は、もう忘れにくいですよ。',
+            '正解です。迷いのない選び方でした。よく読んできた成果ですね。',
+            'その通りです。正直、ここは引っかかると思っていました。見直しました。',
+            '正解。こういう語を黙って覚えているのは、本当に力がついている証拠です。',
+            '素晴らしい。「覚えた気がする」と言わないほうが覚えている、というのは面白いですね。',
+            '正解です。これはもう、KANTAくんの語と言っていいでしょう。'],
          k:['よし！', 'これは分かりました！', 'やった、正解！', 'ふう、合ってた。', '余裕です（たぶん）。'] },
     ng:{ t:['残念、違います。', '惜しい……いえ、違います。', 'そこは引っかかりやすいところです。', '違います。でも、ここで間違えたら覚えられます。', 'ううん、違いますね。'],
          k:['あっ……そっちでしたか。', 'くやしい……！', '覚えたつもりだったのに……。', '次は間違えません。', 'えっ、そうなんですか。'] }
@@ -2202,13 +2210,17 @@ body{
     ctStop();
     var own=QITEMS.filter(function(w){ return quizSetOf(w)===set && S.owned[w.id]; });
     if(!own.length) return;
-    var claimed=shuffle(own.filter(function(w){ return S.owned[w.id].claim; })).sort(function(a,b){ return S.owned[a.id].claim-S.owned[b.id].claim; });
+    var claimed=shuffle(own.filter(function(w){ return S.owned[w.id].claim; }));   /* 押した語の中の順番もランダム（押した順・一覧の順にしない） */
     var rest=shuffle(own.filter(function(w){ return !S.owned[w.id].claim; }));
-    CT={ set:set, items:claimed.concat(rest).slice(0,5), i:0, got:0, toNormal:[], toKira:[], timers:[] };
+    /* 押した語は5問のうち4問まで。残りは押していない語から（足りなければ押した語で埋める） */
+    var take=claimed.slice(0,4), more=rest.slice(0,5-take.length);
+    var items=take.concat(more), extra=claimed.slice(4).concat(rest.slice(more.length));
+    items=items.concat(extra.slice(0,5-items.length));
+    CT={ set:set, items:items, i:0, got:0, toNormal:[], toKira:[], timers:[] };
     var log=$('ctLog'); log.innerHTML=''; $('ctN').textContent='';
     show('ctest'); $('ctest').scrollTop=0;
     var intro=(set==='tr' ? 'TR' : '初級')+'のコレクションから'+CT.items.length+'問出します。'
-      +(claimed.length ? '\nまずは「覚えた気がする」と言っていた語からいきますよ。' : '');
+      +(take.length ? '\nまずは「覚えた気がする」と言っていた語からいきますよ。' : '');
     var run=CT;
     talk(log, 't', esc(intro), 900, run.timers).then(function(){ if(CT===run) ctAsk(); });
   }
