@@ -400,6 +400,42 @@ body{
 .tile .badge{ position:absolute; top:8px; right:7px; font-size:9px; padding:0 5px; border-radius:6px; background:#22305f; color:#f3eee2; }
 .etym .sent{ font-size:17px; line-height:1.9; margin:0 0 18px; font-family:"Fraunces",Georgia,serif; }
 .etym .sent b{ font-weight:600; color:var(--frame2); }
+/* 長押し面の TR 番号：押すと全文 */
+.etym .old.trs{ display:flex; flex-wrap:wrap; gap:8px; font-style:normal; }
+.etym .trbtn{ font-family:"Fraunces",Georgia,serif; font-style:italic; font-size:15px; color:var(--frame2); border-color:var(--teal); padding:5px 14px; }
+
+/* TR の全文（本文・和訳を書く欄・模範解答・SVO） */
+.psg{ position:fixed; inset:0; z-index:30; background:var(--face); color:var(--ink); overflow-y:auto; display:none;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 18px calc(env(safe-area-inset-bottom,0px) + 40px);
+  --n:#1D9E75; --a:#7F77DD; --m:#c8892c; --v:#d33b2f; }
+.psg.on{ display:block; }
+@media (prefers-reduced-motion:no-preference){ .psg.on{ animation:fg-in .25s ease-out; } }
+.psg-head{ display:flex; align-items:center; justify-content:space-between; margin:0 0 14px; }
+.psg-head b{ font-family:"Fraunces",Georgia,serif; font-style:italic; font-weight:400; font-size:22px; color:var(--frame2); }
+.psg button{ appearance:none; border:1px solid var(--line); background:transparent; color:var(--muted); font:inherit; font-size:13px; padding:8px 14px; border-radius:20px; cursor:pointer; }
+.psg button.on{ background:var(--frame); border-color:var(--frame); color:#fff; }
+.psg-tools{ display:flex; gap:8px; margin:0 0 10px; }
+.psg-text p{ font-family:"Fraunces",Georgia,serif; font-size:17.5px; line-height:1.85; margin:0 0 12px; }
+.psg h3{ font-size:13px; color:var(--muted); font-weight:600; margin:22px 0 8px; letter-spacing:.05em; }
+.psg textarea{ width:100%; min-height:9em; font:inherit; font-size:16px; line-height:1.8; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); resize:vertical; }
+.psg-saved{ font-size:11.5px; color:var(--hint); min-height:1.4em; margin-top:4px; }
+.psg-model-text{ margin-top:10px; padding:12px 14px; border-radius:12px; background:var(--face2); font-size:15px; line-height:1.9; }
+.psg-model-text[hidden], .psg-svo-view[hidden], .psg-text[hidden]{ display:none; }
+.psg-note{ font-size:11.5px; color:var(--hint); margin:6px 0 0; }
+.psg-empty{ font-size:14px; line-height:1.9; color:var(--muted); }
+.psg-legend{ font-size:11.5px; color:var(--muted); line-height:1.9; margin:0 0 6px; }
+/* SVO 分解：[ ] 名詞 ( ) 名詞の説明 < > 副詞、動詞に下線、語の下に S V O C M */
+.svo{ font-family:"Fraunces",Georgia,serif; font-size:18px; line-height:2.6; margin:0 0 14px; }
+.svo .bk{ font-weight:600; padding:0 1px; }
+.svo .bk.n{ color:var(--n); } .svo .bk.a{ color:var(--a); } .svo .bk.m{ color:var(--m); }
+.svo .u{ text-decoration:underline; text-decoration-color:var(--v); text-decoration-thickness:2px; text-underline-offset:5px; }
+.svo .w{ position:relative; }
+.svo .w > .lb{ position:absolute; left:50%; top:100%; margin-top:5px; transform:translateX(-50%); white-space:nowrap; line-height:1; }
+.svo .w > .lb.long{ left:0; transform:none; }
+.svo .lb{ font-family:-apple-system,"Hiragino Sans",sans-serif; font-size:13px; font-weight:700; }
+.svo .lb.S, .svo .lb.O, .svo .lb.C{ color:var(--n); }
+.svo .lb.V{ color:var(--v); } .svo .lb.M{ color:var(--m); } .svo .lb.A{ color:var(--a); }
+.svo .lb.sub{ opacity:.8; }
 
 /* キラ加工：知らなかった語 */
 .holo{ position:absolute; inset:0; pointer-events:none; z-index:1; mix-blend-mode:multiply; opacity:.55;
@@ -527,6 +563,10 @@ body{
 </section>
 
 <div class="flash" id="flash"></div>
+<section class="psg" id="psg" aria-hidden="true">
+  <div class="psg-head"><b id="psgTitle"></b><button type="button" id="psgClose">カードに戻る</button></div>
+  <div id="psgBody"></div>
+</section>
 <section class="etym" id="etym" aria-hidden="true"></section>
 <dialog class="keydlg" id="keyDlg">
   <form method="dialog">
@@ -1036,7 +1076,7 @@ body{
     trs=trs.filter(function(t,i){ return trs.indexOf(t)===i; });
     var et=c.etymology||{};
     return '<h1'+(c.word.length>10 ? ' class="l"' : '')+'>'+esc(c.word)+'</h1>'
-      +(trs.length ? '<p class="old">'+esc(trs.join('・'))+'</p>' : (c.set==='met' ? '<p class="old">出会った語</p>' : ''))
+      +(trs.length ? '<p class="old trs">'+trs.map(function(t){ return '<button type="button" class="trbtn" data-tr="'+esc(t)+'">'+esc(t)+'　全文 ›</button>'; }).join('')+'</p>' : (c.set==='met' ? '<p class="old">出会った語</p>' : ''))
       +os.map(function(o){ return '<p class="sent">'+boldIn(o.sentence, c.word)+'</p>'; }).join('')
       +(et.verified ? (et.origin ? '<p class="old">'+esc(et.origin)+'</p>' : '')+(et.paragraphs||[]).map(function(p){ return '<p>'+esc(p)+'</p>'; }).join('') : '')
       +chatBoxHTML()
@@ -1208,6 +1248,103 @@ body{
     renderNet();
   }
 
+  /* =====================================================
+     TR の全文。本文・模範和訳・SVO は公開しないファイル（必修英文100題_本文データ.json）を
+     コレクション画面の「読み込み」で一度取り込み、この端末の localStorage にだけ置く。
+     書いた和訳は TR ごとに残し（eigo:mytr）、書き出しに含める
+     ===================================================== */
+  var PSG_KEY='eigo:passages', MYTR_KEY='eigo:mytr';
+  function loadPassages(){ try{ var o=JSON.parse(localStorage.getItem(PSG_KEY)); return o && Array.isArray(o.passages) ? o : null; }catch(e){ return null; } }
+  function loadMyTr(){ try{ var o=JSON.parse(localStorage.getItem(MYTR_KEY)); return o && typeof o==='object' && !Array.isArray(o) ? o : {}; }catch(e){ return {}; } }
+  function saveMyTr(o){ try{ localStorage.setItem(MYTR_KEY, JSON.stringify(o)); }catch(e){} }
+
+  /* SVO の記法：[ ] ( ) < > でまとまり、_ … _ で動詞の下線、語^S で語の下に記号（かっこの直後ならかっこの下）。\( \) は本文の丸かっこ。
+     説明（S=主語 など）は各題で最初に出たときだけ付ける */
+  var SVO_NAME={ S:'主語', V:'動詞', O:'目的語', C:'補語', M:'修飾', A:'名詞の説明' };
+  function renderSVO(src, seen){
+    var out='', word='', i=0, under=false, OPEN={ '[':'n', '(':'a', '<':'m' }, CLOSE={ ']':'n', ')':'a', '>':'m' };
+    function flush(){ if(word){ out+=esc(word); word=''; } }
+    while(i<src.length){
+      var ch=src[i];
+      if(ch==='\\' && (src[i+1]==='(' || src[i+1]===')')){ word+=src[i+1]; i+=2; continue; }
+      if(OPEN[ch] || CLOSE[ch]){ flush(); out+='<span class="bk '+(OPEN[ch]||CLOSE[ch])+'">'+esc(ch)+'</span>'; i++; continue; }
+      if(ch==='_'){ flush(); out+= under ? '</span>' : '<span class="u">'; under=!under; i++; continue; }
+      if(ch==='^'){
+        var m=/^\^([SVOCMA]['’]?)/.exec(src.slice(i));
+        if(!m){ word+=ch; i++; continue; }
+        var lab=m[1], cls=lab[0]+(lab.length>1 ? ' sub' : ''), mark=(lab[0]==='A' ? '形' : lab[0])+lab.slice(1);
+        var text=seen[lab[0]] ? mark : mark+'='+SVO_NAME[lab[0]];
+        if(!seen[lab[0]]){ seen[lab[0]]=1; cls+=' long'; }
+        if(!word && /<span class="bk [nam]">[^<]*<\/span>$/.test(out)){
+          out=out.replace(/(<span class="bk [nam]">[^<]*<\/span>)$/, '<span class="w">$1<span class="lb '+cls+'">'+esc(text)+'</span></span>');
+          i+=m[0].length; if(src[i]===' ') i++; continue;
+        }
+        var k=word.lastIndexOf(' ')+1, head=word.slice(0,k), w=word.slice(k);
+        out+=esc(head)+'<span class="w">'+esc(w)+'<span class="lb '+cls+'">'+esc(text)+'</span></span>'; word='';
+        i+=m[0].length; continue;
+      }
+      if(ch===' '){ flush(); out+=' '; i++; continue; }
+      word+=ch; i++;
+    }
+    flush(); if(under) out+='</span>';
+    return out;
+  }
+  /* 記号どうしが同じ行で重なったら、後ろの記号を右へずらす */
+  function unclash(root){
+    root.querySelectorAll('.lb').forEach(function(lb){ lb.style.marginLeft=''; });
+    var prev=null;
+    root.querySelectorAll('.lb').forEach(function(lb){
+      var r=lb.getBoundingClientRect();
+      if(prev && Math.abs(r.top-prev.top)<4 && r.left<prev.right+6){ lb.style.marginLeft=(prev.right+6-r.left)+'px'; r=lb.getBoundingClientRect(); }
+      prev=r;
+    });
+  }
+
+  var psg=document.getElementById('psg'), psgBody=document.getElementById('psgBody'), psgTimer=0;
+  function openPassage(tr){
+    var pk=loadPassages(), p=pk && pk.passages.filter(function(x){ return x.tr===tr; })[0];
+    document.getElementById('psgTitle').textContent=tr;
+    if(!p){
+      psgBody.innerHTML='<p class="psg-empty">本文がまだこの端末に入っていません。<br>iCloud Drive の eigo-words フォルダにある「必修英文100題_本文データ.json」を、コレクション画面の「読み込み」から一度読み込んでください。</p>';
+    }else{
+      var seen={}, mine=(loadMyTr()[tr]||{}).text||'';
+      psgBody.innerHTML='<div class="psg-tools"><button type="button" class="psg-svo-btn">SVO で分ける</button></div>'
+        +'<div class="psg-text">'+p.text.split('\n').map(function(l){ return '<p>'+esc(l)+'</p>'; }).join('')+'</div>'
+        +'<div class="psg-svo-view" hidden><p class="psg-legend"><b style="color:var(--n)">[ ]</b> 名詞のまとまり　<b style="color:var(--a)">( )</b> 名詞の説明　<b style="color:var(--m)">&lt; &gt;</b> 副詞のまとまり　下線は動詞</p>'
+        +(p.svo||[]).map(function(m){ return '<div class="svo">'+renderSVO(m, seen)+'</div>'; }).join('')+'</div>'
+        +'<h3>和訳</h3><textarea class="psg-my" placeholder="ここに和訳を書く" aria-label="'+esc(tr)+' の和訳">'+esc(mine)+'</textarea><div class="psg-saved"></div>'
+        +'<button type="button" class="psg-model-btn">模範解答を見る</button>'
+        +'<div class="psg-model-text" hidden><p style="margin:0">'+esc(p.translation||'')+'</p><p class="psg-note">模範解答は Claude が作った下書きです。</p></div>';
+      var svoBtn=psgBody.querySelector('.psg-svo-btn'), svoView=psgBody.querySelector('.psg-svo-view'), plain=psgBody.querySelector('.psg-text');
+      svoBtn.addEventListener('click', function(){
+        var on=svoView.hidden;
+        svoView.hidden=!on; plain.hidden=on;
+        svoBtn.classList.toggle('on', on); svoBtn.textContent=on ? '元の英文に戻す' : 'SVO で分ける';
+        if(on) requestAnimationFrame(function(){ svoView.querySelectorAll('.svo').forEach(unclash); });
+      });
+      var modelBtn=psgBody.querySelector('.psg-model-btn'), model=psgBody.querySelector('.psg-model-text');
+      modelBtn.addEventListener('click', function(){
+        model.hidden=!model.hidden; modelBtn.classList.toggle('on', !model.hidden);
+        modelBtn.textContent=model.hidden ? '模範解答を見る' : '模範解答を隠す';
+      });
+      var ta=psgBody.querySelector('.psg-my'), saved=psgBody.querySelector('.psg-saved');
+      ta.addEventListener('input', function(){
+        clearTimeout(psgTimer); saved.textContent='';
+        psgTimer=setTimeout(function(){
+          var all=loadMyTr();
+          if(ta.value.trim()) all[tr]={ text:ta.value, at:Date.now() }; else delete all[tr];
+          saveMyTr(all); saved.textContent='保存しました';
+        }, 600);
+      });
+    }
+    psg.scrollTop=0; psg.classList.add('on'); psg.setAttribute('aria-hidden','false');
+    document.getElementById('psgClose').focus({ preventScroll:true });
+  }
+  function closePassage(){ psg.classList.remove('on'); psg.setAttribute('aria-hidden','true'); }
+  document.getElementById('psgClose').addEventListener('click', closePassage);
+  psg.addEventListener('keydown', function(e){ if(e.key==='Escape' && !e.target.closest('textarea')) closePassage(); });
+  window.addEventListener('resize', function(){ if(psg.classList.contains('on')) psg.querySelectorAll('.psg-svo-view:not([hidden]) .svo').forEach(unclash); });
+
   var etym=document.getElementById('etym'), flash=document.getElementById('flash');
   var etymCard=null, etymDone=null;
 
@@ -1216,6 +1353,7 @@ body{
     var closeBtn=etym.querySelector('.close');
     closeBtn.addEventListener('click', closeEtym);
     var cb=etym.querySelector('.chat'); if(cb) bindChat(cb, c);
+    etym.querySelectorAll('.trbtn').forEach(function(b){ b.addEventListener('click', function(){ openPassage(b.dataset.tr); }); });
     etymCard=card; etymDone=onClosed;
     etym.style.setProperty('--cx', x+'px'); etym.style.setProperty('--cy', y+'px');
     setTimeout(function(){
@@ -1604,7 +1742,7 @@ body{
   });
   $('exportBtn').addEventListener('click', function(){
     /* 会話（eigo:chats）も含める。鍵は含めない */
-    var blob=new Blob([JSON.stringify(Object.assign({}, S, { chats:loadChats() }), null, 1)], { type:'application/json' });
+    var blob=new Blob([JSON.stringify(Object.assign({}, S, { chats:loadChats(), mytr:loadMyTr() }), null, 1)], { type:'application/json' });
     var a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='eitango-'+dayKey().replace(/-/g,'')+'.json';
     document.body.appendChild(a); a.click(); a.remove();
@@ -1616,10 +1754,17 @@ body{
     if(!f) return;
     f.text().then(function(t){
       var s; try{ s=JSON.parse(t); }catch(e){ s=null; }
+      /* 本文データのファイル（公開しない）。記録は置き換えずに、本文だけを取り込む */
+      if(s && s.kind==='eigo-passages' && Array.isArray(s.passages) && s.passages.length){
+        try{ localStorage.setItem(PSG_KEY, JSON.stringify(s)); alert('「'+(s.title||'本文')+'」を読み込みました（'+s.passages.length+'題）'); }
+        catch(e){ alert('本文を保存できませんでした（端末の空き容量を確認してください）'); }
+        return;
+      }
       if(!valid(s)){ alert('このファイルは読み込めません'); return; }
       if(!confirm('いまの記録をこのファイルの内容で置き換えます')) return;
       if(s.chats && typeof s.chats==='object' && !Array.isArray(s.chats)) saveChats(s.chats);
-      delete s.chats;
+      if(s.mytr && typeof s.mytr==='object' && !Array.isArray(s.mytr)) saveMyTr(s.mytr);
+      delete s.chats; delete s.mytr;
       S=s; save(); renderCollection();
     });
   });
